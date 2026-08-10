@@ -102,7 +102,7 @@ The component vocabulary is hardware. Draw it all in CSS — flat fills, 1px bor
 ## 6. Iconography
 
 - Tool icons are inline SVG line icons, ~21px on a 42px key, `stroke-width` 1.6, drawn in `currentColor` so they inherit key state (ink at rest, orange when active).
-- Literal, single-weight, no fills except tiny functional details (spray dots, the fill-bucket drip).
+- Literal, single-weight, no fills except tiny functional details (spray dots, the fill-bucket drip) — or when the fill *is* the state being reported, as on a shape tool set to draw filled.
 - Transport keys may use plain glyph characters (`↺`, `×`, `↓`) with a mono label beneath — symbol above, word below, like a printed panel.
 
 ## 7. Voice & copy
