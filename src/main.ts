@@ -8,7 +8,13 @@ import { clearMode, createDoc } from "./state/doc";
 import * as history from "./state/history";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
+import { activeBuffer } from "./state/doc";
 import { createGridEditor } from "./editor/grid-editor";
+import { bufferToDataURI, debounce } from "./preview/compose";
+import { createBorderPreview } from "./preview/border-preview";
+import { createTilePreview } from "./preview/tile-preview";
+import { borderCSS, copyText, tileCSS } from "./export/css";
+import { downloadPNG } from "./export/png";
 import { TOOLS, toolByHotkey, toolById } from "./tools/index";
 import type { TransportAction } from "./ui/transport";
 import { h } from "./ui/dom";
@@ -97,6 +103,21 @@ function boot(): void {
     bumpDoc({ tip: "cleared. fresh start" });
   }
 
+  function doCopyCss(): void {
+    const s = store.get();
+    const uri = bufferToDataURI(activeBuffer(doc, s.mode));
+    const snippet = s.mode === "border" ? borderCSS(uri, doc.cellSize) : tileCSS(uri, doc.cellSize);
+    void copyText(snippet).then((ok) => {
+      store.set({ tip: ok ? "css copied" : "couldn't reach the clipboard" });
+    });
+  }
+
+  function doExportPng(): void {
+    const s = store.get();
+    downloadPNG(activeBuffer(doc, s.mode));
+    store.set({ tip: "pattern.png" });
+  }
+
   function onTransport(action: TransportAction): void {
     switch (action) {
       case "undo":
@@ -107,6 +128,12 @@ function boot(): void {
         break;
       case "clear":
         doClear();
+        break;
+      case "css":
+        doCopyCss();
+        break;
+      case "export":
+        doExportPng();
         break;
       default:
         break;
@@ -132,10 +159,14 @@ function boot(): void {
     attrs: { "aria-label": "drawing canvas" },
   });
   const bezel = h("div", { className: "bezel" }, canvas);
+  const borderPreview = createBorderPreview();
+  const tilePreview = createTilePreview();
   const output = h(
     "div",
     { className: "output" },
     h("span", { className: "tb-label", text: "output" }),
+    borderPreview.root,
+    tilePreview.root,
   );
   const panel = h("div", { className: "panel" }, bezel, output);
   const deck = h("div", { className: "deck" }, chips.root, transport.root);
@@ -203,6 +234,30 @@ function boot(): void {
     const tool = toolByHotkey(key);
     if (tool) setTool(tool.id);
   });
+
+  // ── live previews (150 ms debounce while drawing; instant on commit) ─
+  function refreshPreviews(): void {
+    const s = store.get();
+    const uri = bufferToDataURI(activeBuffer(doc, s.mode));
+    if (s.mode === "border") {
+      borderPreview.update(uri, doc.cellSize);
+      borderPreview.root.style.display = "";
+      tilePreview.root.style.display = "none";
+    } else {
+      tilePreview.update(uri, doc.cellSize);
+      tilePreview.root.style.display = "";
+      borderPreview.root.style.display = "none";
+    }
+  }
+  const debouncedPreviews = debounce(150, refreshPreviews);
+  store.subscribe((s, prev) => {
+    if (s.dirtyPreview !== prev.dirtyPreview || s.mode !== prev.mode) {
+      debouncedPreviews.now();
+    } else if (s.dirtyDoc !== prev.dirtyDoc) {
+      debouncedPreviews();
+    }
+  });
+  refreshPreviews();
 
   // ── reflect state into the chrome ──────────────────────────────────
   function syncAll(s: AppState): void {
