@@ -46,6 +46,12 @@ export interface AppState {
   /** PNG/CSS output upscale ∈ {1,2,4}. Session-only UI state — never
    *  persisted, never in undo history, never applied to the live previews. */
   exportScale: 1 | 2 | 4;
+  /** which shape tools draw filled rather than outline-only. Keys are tool
+   *  ids; only tools flagged `fillable` ever appear. Session-only UI state —
+   *  never persisted (the tool itself isn't either), never in undo history,
+   *  never bumps dirtyDoc/dirtyPreview. Replaced wholesale so subscribers can
+   *  reference-compare (like `focus`). */
+  shapeFill: Readonly<Record<string, boolean>>;
   dirtyDoc: number;
   dirtyPreview: number;
   /** bumped on any selection/float change. Drives the editor re-render ONLY —
