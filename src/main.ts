@@ -80,6 +80,7 @@ function boot(): void {
     color: hexToU32(startColor) ?? 0xff000000,
     colorHex: startColor,
     cellSize: doc.cellSize,
+    focus: null,
     hover: null,
     dirtyDoc: 0,
     dirtyPreview: 0,
@@ -109,10 +110,67 @@ function boot(): void {
     if (s.mode === mode) return;
     store.set({
       mode,
+      focus: null, // mode switch always exits focus
       hover: null,
       tip: MODE_TIPS[mode] ?? "",
       dirtyPreview: s.dirtyPreview + 1,
     });
+  }
+
+  // ── zoom-to-one-cell focus (ephemeral view state, never persisted) ──
+  let lastFocus = { cx: 0, cy: 0 };
+
+  function enterFocus(cx: number, cy: number): void {
+    const s = store.get();
+    if (s.mode === "border" && cx === 1 && cy === 1) {
+      store.set({ tip: "center's locked. pick a live cell" });
+      return;
+    }
+    lastFocus = { cx, cy };
+    store.set({
+      focus: { cx, cy },
+      hover: null,
+      tip: s.mode === "border" ? "one cell. all the pixels" : "one tile. it still wraps",
+    });
+  }
+
+  function exitFocus(): void {
+    if (!store.get().focus) return;
+    store.set({ focus: null, hover: null, tip: "back to nine" });
+  }
+
+  function toggleFocus(): void {
+    const s = store.get();
+    if (s.focus) {
+      exitFocus();
+      return;
+    }
+    let { cx, cy } = lastFocus;
+    if (s.hover) {
+      cx = Math.max(0, Math.min(2, Math.floor(s.hover.x / doc.cellSize)));
+      cy = Math.max(0, Math.min(2, Math.floor(s.hover.y / doc.cellSize)));
+    } else if (s.mode === "border" && cx === 1 && cy === 1) {
+      // remembered cell can be the center when it was focused in tile mode
+      cx = 0;
+      cy = 0;
+    }
+    enterFocus(cx, cy);
+  }
+
+  function moveFocus(dx: number, dy: number): void {
+    const s = store.get();
+    if (!s.focus) return;
+    let cx = s.focus.cx + dx;
+    let cy = s.focus.cy + dy;
+    if (cx < 0 || cx > 2 || cy < 0 || cy > 2) return; // no wrap-around
+    if (s.mode === "border" && cx === 1 && cy === 1) {
+      // step over the locked center in the same direction
+      cx += dx;
+      cy += dy;
+      if (cx < 0 || cx > 2 || cy < 0 || cy > 2) return;
+    }
+    lastFocus = { cx, cy };
+    store.set({ focus: { cx, cy }, hover: null });
   }
 
   function doUndo(): void {
@@ -237,6 +295,7 @@ function boot(): void {
       onTool: setTool,
       onMode: setMode,
       onCellStep: stepCell,
+      onFocus: toggleFocus,
     },
   });
 
@@ -313,6 +372,22 @@ function boot(): void {
       return;
     }
     if (e.altKey) return;
+    if (key === "escape") {
+      if (store.get().focus) exitFocus(); // don't swallow Esc otherwise
+      return;
+    }
+    if (store.get().focus && key.startsWith("arrow")) {
+      e.preventDefault();
+      if (key === "arrowleft") moveFocus(-1, 0);
+      else if (key === "arrowright") moveFocus(1, 0);
+      else if (key === "arrowup") moveFocus(0, -1);
+      else if (key === "arrowdown") moveFocus(0, 1);
+      return;
+    }
+    if (key === "z") {
+      toggleFocus();
+      return;
+    }
     if (key === "1") {
       setMode("border");
       return;
@@ -367,9 +442,16 @@ function boot(): void {
 
   // ── reflect state into the chrome ──────────────────────────────────
   function syncAll(s: AppState): void {
-    toolbar.sync({ tool: s.tool, mode: s.mode, cellSize: s.cellSize });
+    toolbar.sync({ tool: s.tool, mode: s.mode, cellSize: s.cellSize, focus: s.focus !== null });
     chips.sync(s.colorHex);
-    lcd.sync({ tool: s.tool, hover: s.hover, mode: s.mode, cellSize: s.cellSize, tip: s.tip });
+    lcd.sync({
+      tool: s.tool,
+      hover: s.hover,
+      mode: s.mode,
+      cellSize: s.cellSize,
+      focus: s.focus,
+      tip: s.tip,
+    });
   }
   store.subscribe((s) => syncAll(s));
   syncAll(store.get());

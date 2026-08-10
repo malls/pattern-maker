@@ -38,6 +38,10 @@ export interface AppState {
   /** current color as '#rrggbb' for chips / persistence */
   colorHex: string;
   cellSize: number;
+  /** zoom-to-one-cell: which 3×3 cell is focused, or null (whole view).
+   *  Ephemeral UI state — never persisted, never in undo history.
+   *  cx, cy ∈ {0,1,2}; border mode never allows (1,1). */
+  focus: { cx: number; cy: number } | null;
   hover: { x: number; y: number } | null;
   dirtyDoc: number;
   dirtyPreview: number;

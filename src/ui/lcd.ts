@@ -7,6 +7,7 @@ export interface LcdState {
   hover: { x: number; y: number } | null;
   mode: string;
   cellSize: number;
+  focus: { cx: number; cy: number } | null;
   tip: string;
 }
 
@@ -23,6 +24,10 @@ export function createLcd(): LcdView {
   const yEl = h("span", { text: "—" });
   const modeEl = h("b", { text: "border" });
   const cellEl = h("span", { text: "016" });
+  // focus value: plain "—" when off, orange live value when focused
+  const focusOffEl = h("span", { text: "—" });
+  const focusOnEl = h("b", { text: "" });
+  focusOnEl.style.display = "none";
   const tipEl = h("span", { text: "" });
 
   const root = h(
@@ -42,6 +47,7 @@ export function createLcd(): LcdView {
     ),
     h("span", {}, h("span", { className: "dim", text: "mode" }), " ", modeEl),
     h("span", {}, h("span", { className: "dim", text: "cell" }), " ", cellEl),
+    h("span", {}, h("span", { className: "dim", text: "focus" }), " ", focusOffEl, focusOnEl),
     h(
       "span",
       { className: "grow" },
@@ -59,6 +65,14 @@ export function createLcd(): LcdView {
       yEl.textContent = s.hover ? pad3(s.hover.y) : "—";
       modeEl.textContent = s.mode;
       cellEl.textContent = pad3(s.cellSize);
+      if (s.focus) {
+        focusOnEl.textContent = `${s.focus.cx + 1}·${s.focus.cy + 1}`;
+        focusOnEl.style.display = "";
+        focusOffEl.style.display = "none";
+      } else {
+        focusOnEl.style.display = "none";
+        focusOffEl.style.display = "";
+      }
       tipEl.textContent = s.tip;
     },
   };

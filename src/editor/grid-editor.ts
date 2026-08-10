@@ -86,9 +86,11 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     canvas.style.width = `${devW / dpr}px`;
     canvas.style.height = `${devH / dpr}px`;
     // largest integer device zoom that fits, centered, letterboxed
-    Lf = L;
-    fx0 = 0;
-    fy0 = 0;
+    const focus = store.get().focus;
+    const C = doc.cellSize;
+    Lf = focus ? C : L;
+    fx0 = focus ? focus.cx * C : 0;
+    fy0 = focus ? focus.cy * C : 0;
     z = Math.max(1, Math.floor(Math.min(devW, devH) / Lf));
     const art = Lf * z;
     ox = Math.floor((devW - art) / 2);
@@ -139,11 +141,14 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     ctx.drawImage(checker, ox, oy);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(offNative, fx0, fy0, Lf, Lf, ox, oy, Lf * z, Lf * z);
-    ctx.save();
-    ctx.translate(ox, oy);
-    drawDelineation(ctx, L, z, s.mode);
-    if (s.mode === "border") drawCenterLock(ctx, C, z, dpr);
-    ctx.restore();
+    if (!s.focus) {
+      // thirds delineation / center lock are meaningless inside one cell
+      ctx.save();
+      ctx.translate(ox, oy);
+      drawDelineation(ctx, L, z, s.mode);
+      if (s.mode === "border") drawCenterLock(ctx, C, z, dpr);
+      ctx.restore();
+    }
   }
 
   function requestRender(): void {
@@ -217,8 +222,22 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     const a = toArt(e);
     const x = Math.floor(a.x / z) + fx0;
     const y = Math.floor(a.y / z) + fy0;
-    const L = viewSize(doc);
-    return { x: clampN(x, 0, L - 1), y: clampN(y, 0, L - 1) };
+    const s = store.get();
+    if (!s.focus) {
+      const L = viewSize(doc);
+      return { x: clampN(x, 0, L - 1), y: clampN(y, 0, L - 1) };
+    }
+    const C = doc.cellSize;
+    if (s.mode === "border") {
+      // focused border: the pointer cannot paint outside the focused cell
+      return { x: clampN(x, fx0, fx0 + C - 1), y: clampN(y, fy0, fy0 + C - 1) };
+    }
+    // focused tile: allow one cell of raw margin — never wrap before
+    // rasterizing; plotTile's modulo wraps every plotted pixel (torus)
+    return {
+      x: clampN(x, fx0 - C, fx0 + 2 * C - 1),
+      y: clampN(y, fy0 - C, fy0 + 2 * C - 1),
+    };
   }
 
   /** What the LCD shows for a mapped point. */
@@ -273,8 +292,13 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
 
   // ── invalidation ───────────────────────────────────────────────────
   store.subscribe((s, prev) => {
-    if (s.dirtyDoc !== prev.dirtyDoc || s.mode !== prev.mode || s.cellSize !== prev.cellSize) {
-      if (s.cellSize !== prev.cellSize) needLayout = true;
+    if (
+      s.dirtyDoc !== prev.dirtyDoc ||
+      s.mode !== prev.mode ||
+      s.cellSize !== prev.cellSize ||
+      s.focus !== prev.focus
+    ) {
+      if (s.cellSize !== prev.cellSize || s.focus !== prev.focus) needLayout = true;
       requestRender();
     }
   });
