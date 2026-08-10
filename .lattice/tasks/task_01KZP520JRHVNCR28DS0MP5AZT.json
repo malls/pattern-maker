@@ -1,26 +1,32 @@
 {
   "assigned_to": null,
   "branch_links": [],
-  "comment_count": 2,
+  "comment_count": 3,
   "complexity": null,
   "created_at": "2026-08-10T15:35:59Z",
   "created_by": "human:forrest",
   "custom_fields": {},
   "description": null,
-  "done_at": null,
-  "evidence_refs": [],
+  "done_at": "2026-08-10T15:59:42Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZP6D8QE18Z1MZ0DW1B4JQ0F",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
   "id": "task_01KZP520JRHVNCR28DS0MP5AZT",
-  "last_event_id": "ev_01KZP5XWMVEBS0RDBZXRMY8S81",
-  "last_status_changed_at": "2026-08-10T15:51:13Z",
+  "last_event_id": "ev_01KZP6DE62K1R2JQGMNXWY66CX",
+  "last_status_changed_at": "2026-08-10T15:59:42Z",
   "priority": "medium",
   "relationships_out": [],
   "reopened_count": 0,
   "schema_version": 1,
   "short_id": "PM-9",
-  "status": "review",
+  "status": "done",
   "tags": null,
   "title": "Border preview 2x-scaled box + upscaled 2x/4x nearest-neighbor export",
   "type": "task",
-  "updated_at": "2026-08-10T15:51:13Z",
+  "updated_at": "2026-08-10T15:59:42Z",
   "urgency": null
 }
