@@ -60,6 +60,18 @@ function boot(): void {
     store.set({ color: c, colorHex: hex });
   }
 
+  function setMode(mode: string): void {
+    if (mode !== "border" && mode !== "tile") return;
+    const s = store.get();
+    if (s.mode === mode) return;
+    store.set({
+      mode,
+      hover: null,
+      tip: MODE_TIPS[mode] ?? "",
+      dirtyPreview: s.dirtyPreview + 1,
+    });
+  }
+
   function doUndo(): void {
     const s = store.get();
     if (history.undo(hist, doc, s.mode)) {
@@ -106,7 +118,7 @@ function boot(): void {
     tools: TOOLS.map((t) => ({ id: t.id, hotkey: t.hotkey, label: t.label })),
     handlers: {
       onTool: setTool,
-      onMode: () => {},
+      onMode: setMode,
       onCellStep: () => {},
     },
   });
@@ -180,6 +192,14 @@ function boot(): void {
       return;
     }
     if (e.altKey) return;
+    if (key === "1") {
+      setMode("border");
+      return;
+    }
+    if (key === "2") {
+      setMode("tile");
+      return;
+    }
     const tool = toolByHotkey(key);
     if (tool) setTool(tool.id);
   });
