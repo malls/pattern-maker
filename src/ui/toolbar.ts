@@ -28,7 +28,10 @@ export interface ToolbarSpec {
   handlers: {
     onTool(id: string): void;
     onMode(mode: string): void;
-    onCellStep(dir: -1 | 1): void;
+    /** Step the cell size by a signed delta (±1, or ±8 for shift-click). */
+    onCellStep(delta: number): void;
+    /** Set the cell size to a typed value (caller clamps/rounds). */
+    onCellSet(size: number): void;
     onFocus(): void;
   };
 }
@@ -75,11 +78,63 @@ export function createToolbar(spec: ToolbarSpec): ToolbarView {
   }
   modeGroup.append(bank);
 
-  const readout = h("span", { className: "readout", text: "016", attrs: { "aria-live": "polite" } });
-  const minus = h("button", { className: "key", text: "−", title: "smaller cell", attrs: { "aria-label": "smaller cell" } });
-  const plus = h("button", { className: "key", text: "+", title: "larger cell", attrs: { "aria-label": "larger cell" } });
-  minus.addEventListener("click", () => spec.handlers.onCellStep(-1));
-  plus.addEventListener("click", () => spec.handlers.onCellStep(1));
+  // click-to-edit readout: the button swaps for a numeric input; Enter/blur
+  // commits (garbage reverts), Esc cancels. Display is three-digit zero-padded.
+  let cellSize = 16;
+  const readout = h("button", {
+    className: "readout",
+    text: "016",
+    title: "cell size — click to type",
+    attrs: { "aria-live": "polite", "aria-label": "cell size in pixels — click to edit" },
+  });
+  readout.addEventListener("click", () => {
+    const input = h("input", {
+      className: "readout readout-input",
+      attrs: { type: "text", inputmode: "numeric", "aria-label": "cell size in pixels" },
+    });
+    input.value = String(cellSize);
+    let done = false;
+    const close = (refocus: boolean): void => {
+      if (done) return;
+      done = true;
+      input.replaceWith(readout);
+      if (refocus) readout.focus();
+    };
+    const commit = (refocus: boolean): void => {
+      if (done) return;
+      const n = Number.parseInt(input.value.trim(), 10);
+      close(refocus);
+      if (Number.isFinite(n)) spec.handlers.onCellSet(n); // garbage → revert
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commit(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        close(true);
+      }
+    });
+    input.addEventListener("blur", () => commit(false));
+    readout.replaceWith(input);
+    input.focus();
+    input.select();
+  });
+  const minus = h("button", {
+    className: "key",
+    text: "−",
+    title: "smaller cells — shift for −8",
+    attrs: { "aria-label": "smaller cells" },
+  });
+  const plus = h("button", {
+    className: "key",
+    text: "+",
+    title: "larger cells — shift for +8",
+    attrs: { "aria-label": "larger cells" },
+  });
+  minus.addEventListener("click", (e) => spec.handlers.onCellStep(e.shiftKey ? -8 : -1));
+  plus.addEventListener("click", (e) => spec.handlers.onCellStep(e.shiftKey ? 8 : 1));
   const cellGroup = h("div", { className: "tb-group", attrs: { role: "group", "aria-label": "cell size" } });
   cellGroup.append(h("span", { className: "tb-label", text: "cell" }));
   const stepper = h("div", { className: "stepper" }, minus, readout, plus);
@@ -108,6 +163,7 @@ export function createToolbar(spec: ToolbarSpec): ToolbarView {
       for (const [id, key] of modeKeys) {
         key.setAttribute("aria-pressed", id === state.mode ? "true" : "false");
       }
+      cellSize = state.cellSize;
       readout.textContent = String(state.cellSize).padStart(3, "0");
       focusKey.setAttribute("aria-pressed", state.focus ? "true" : "false");
     },

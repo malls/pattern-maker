@@ -21,7 +21,7 @@ body {
 /* ── the device ─────────────────────────────────────────────────────── */
 .device {
   position: relative;
-  width: min(1180px, 100%);
+  width: min(1400px, 100%);
   background: var(--plastic);
   border: 1px solid #C0BFBA;
   border-radius: 14px;
@@ -172,11 +172,18 @@ body {
   font-variant-numeric: tabular-nums;
   color: var(--lcd-text);
   background: var(--charcoal);
+  border: 0;
   border-radius: 4px;
   padding: 6px 9px;
-  min-width: 42px;
+  width: 42px;
   text-align: center;
   user-select: none;
+}
+.stepper button.readout { cursor: text; }
+.stepper .readout:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.stepper input.readout {
+  user-select: auto;
+  caret-color: var(--orange);
 }
 
 /* ── panel: editor left, output right ───────────────────────────────── */
@@ -189,7 +196,9 @@ body {
 .bezel {
   flex: 1;
   min-width: 0;
-  height: 560px;
+  /* fill tall viewports (fallback first for engines without dvh) */
+  height: clamp(560px, calc(100vh - 300px), 920px);
+  height: clamp(560px, calc(100dvh - 300px), 920px);
   background: var(--ground);
   border: 1px solid var(--key-border);
   border-radius: 9px;
@@ -207,7 +216,7 @@ body {
 
 /* output column */
 .output {
-  width: 372px;
+  width: 440px;
   flex: none;
   display: flex;
   flex-direction: column;

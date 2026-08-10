@@ -13,9 +13,13 @@ import { floodFill } from "../raster/raster";
 
 export type Mode = "border" | "tile";
 
-export const CELL_SIZES: readonly number[] = [8, 12, 16, 24, 32, 48, 64];
-export const MIN_CELL = 8;
+export const MIN_CELL = 1;
 export const MAX_CELL = 64;
+
+/** Round to the nearest integer and clamp into the valid cell-size range. */
+export function clampCell(n: number): number {
+  return Math.min(MAX_CELL, Math.max(MIN_CELL, Math.round(n)));
+}
 
 export interface Doc {
   cellSize: number;

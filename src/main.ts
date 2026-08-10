@@ -6,7 +6,7 @@ import "./styles/app.css";
 import { hexToU32 } from "./raster/buffer";
 import { line, rectOutline } from "./raster/raster";
 import type { Doc } from "./state/doc";
-import { CELL_SIZES, clearMode, createDoc, plotBorder, setCellSize, viewSize } from "./state/doc";
+import { clampCell, clearMode, createDoc, plotBorder, setCellSize, viewSize } from "./state/doc";
 import * as history from "./state/history";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
@@ -198,19 +198,23 @@ function boot(): void {
     bumpDoc({ tip: "cleared. fresh start" });
   }
 
-  function stepCell(dir: -1 | 1): void {
+  function setCell(raw: number, atLimitTip?: string): void {
     const cur = doc.cellSize;
-    const next =
-      dir === 1
-        ? (CELL_SIZES.find((v) => v > cur) ?? cur)
-        : ([...CELL_SIZES].reverse().find((v) => v < cur) ?? cur);
+    const next = clampCell(raw);
     if (next === cur) {
-      store.set({ tip: dir === 1 ? "that's as big as cells get" : "that's as small as cells get" });
+      store.set({ tip: atLimitTip ?? `cell ${String(cur).padStart(3, "0")} already` });
       return;
     }
     history.pushBoth(hist, doc);
     setCellSize(doc, next);
     bumpDoc({ cellSize: next, tip: `cell ${String(next).padStart(3, "0")}` });
+  }
+
+  function stepCell(delta: number): void {
+    setCell(
+      doc.cellSize + delta,
+      delta > 0 ? "that's as big as cells get" : "that's as small as cells get",
+    );
   }
 
   function doSave(): void {
@@ -296,6 +300,7 @@ function boot(): void {
       onTool: setTool,
       onMode: setMode,
       onCellStep: stepCell,
+      onCellSet: setCell,
       onFocus: toggleFocus,
     },
   });
