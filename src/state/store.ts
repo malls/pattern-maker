@@ -45,5 +45,9 @@ export interface AppState {
   hover: { x: number; y: number } | null;
   dirtyDoc: number;
   dirtyPreview: number;
+  /** bumped on any selection/float change. Drives the editor re-render ONLY —
+   *  selection is ephemeral view state (never persisted, never in history), so
+   *  marquee drags and float moves must not churn previews or autosave. */
+  dirtySel: number;
   tip: string;
 }

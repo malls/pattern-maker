@@ -65,6 +65,38 @@ export function drawCenterLock(
   ctx.restore();
 }
 
+/** Marching ants, standing still: a 1-device-px dashed hairline just outside
+ *  the marked pixels, alternating orange and paper so it reads over any
+ *  artwork. x/y/w/h are window-local LOGICAL coords (the caller has already
+ *  translated to the art origin); z is the device zoom. Static by design —
+ *  the LCD cursor is the app's only idle animation (BRANDING §8). */
+export function drawMarquee(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  z: number,
+): void {
+  const X = Math.round(x * z) - 1;
+  const Y = Math.round(y * z) - 1;
+  const W = Math.round(w * z) + 2;
+  const H = Math.round(h * z) + 2;
+  const SEG = 4;
+  const dash = (px: number, py: number, len: number, horiz: boolean, off: number): void => {
+    for (let i = 0; i < len; i += SEG) {
+      ctx.fillStyle = (Math.floor((i + off) / SEG) & 1) === 0 ? "#FF4E00" : "#FBFAF8";
+      const n = Math.min(SEG, len - i);
+      if (horiz) ctx.fillRect(px + i, py, n, 1);
+      else ctx.fillRect(px, py + i, 1, n);
+    }
+  };
+  dash(X, Y, W, true, 0);
+  dash(X, Y + H - 1, W, true, 0);
+  dash(X, Y + 1, H - 2, false, SEG);
+  dash(X + W - 1, Y + 1, H - 2, false, SEG);
+}
+
 /** Focused-view mini-map: a small 3×3 glyph in the bottom-right letterbox
  *  corner showing which cell is focused. Ink hairline squares on the light
  *  well, the focused cell filled orange, border-mode center dimmed hollow. Drawn

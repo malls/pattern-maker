@@ -18,6 +18,8 @@ const ICONS: Record<string, string> = {
     '<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 3l7 7-6 6a2.5 2.5 0 01-3.6 0L5 12.6a2.5 2.5 0 010-3.6L11 3z"/><path d="M18 14c1 1.4 1.6 2.4 1.6 3.2a1.6 1.6 0 11-3.2 0c0-.8.6-1.8 1.6-3.2z" fill="currentColor"/></svg>',
   eyedropper:
     '<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12.6 6.4L4.8 14.2 4 18l3.8-.8 7.8-7.8"/><path d="M11.8 5.6l1.8-1.8a2.05 2.05 0 012.9 0l1.7 1.7a2.05 2.05 0 010 2.9l-1.8 1.8-4.6-4.6z"/></svg>',
+  select:
+    '<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="5.5" width="13" height="11" stroke-dasharray="3 2.2"/></svg>',
   /* zoom-to-cell: four corner brackets converging on one small square */
   focus:
     '<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 8V4h4"/><path d="M14 4h4v4"/><path d="M18 14v4h-4"/><path d="M8 18H4v-4"/><rect x="8.5" y="8.5" width="5" height="5"/></svg>',

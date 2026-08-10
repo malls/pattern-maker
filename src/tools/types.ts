@@ -2,6 +2,8 @@
  *  coordinates and emit through the ToolContext; all mode semantics (center
  *  lock, torus wrap) live behind ctx.plot / ctx.fill. */
 
+import type { SelRect } from "../state/selection";
+
 export interface Pt {
   x: number;
   y: number;
@@ -26,6 +28,9 @@ export interface ToolContext {
   beginStroke(): void;
   /** finish a gesture: triggers preview regeneration + autosave */
   commit(): void;
+  /** live-update the marquee rect during a drag (normalized); null deselects */
+  setSelection(r: SelRect | null): void;
+  getSelection(): SelRect | null;
 }
 
 export interface Tool {
@@ -33,6 +38,12 @@ export interface Tool {
   readonly hotkey: string;
   readonly label: string;
   readonly tip: string;
+  /** never mutates the doc: gestures bump dirtySel, not dirtyDoc (so marquee
+   *  drags don't churn previews / autosave) */
+  readonly passive?: true;
+  /** toPt clamps to the visible window even in focused tile mode (no raw
+   *  margin — a marquee beyond the window would mark what you can't see) */
+  readonly clampToWindow?: true;
   onDown(p: Pt, ctx: ToolContext): void;
   onMove(p: Pt, ctx: ToolContext): void;
   onUp(p: Pt, ctx: ToolContext): void;

@@ -12,14 +12,23 @@ import { alphaOf, u32ToHex } from "../raster/buffer";
 import type { AppState, Store } from "../state/store";
 import type { Doc } from "../state/doc";
 import { activeBuffer, floodView, getViewPx, plotView, viewSize } from "../state/doc";
+import type { SelectionState } from "../state/selection";
 import type { Pt, Tool, ToolContext } from "../tools/types";
-import { drawCenterLock, drawChecker, drawDelineation, drawFocusMinimap } from "./chrome";
+import {
+  drawCenterLock,
+  drawChecker,
+  drawDelineation,
+  drawFocusMinimap,
+  drawMarquee,
+} from "./chrome";
 
 export interface GridEditorDeps {
   canvas: HTMLCanvasElement;
   container: HTMLElement;
   store: Store<AppState>;
   doc: Doc;
+  /** live selection state, held by main and mutated in place (the doc pattern) */
+  sel: SelectionState;
   getTool(): Tool;
   /** push an undo entry for the active mode (called at gesture start) */
   beginStroke(): void;
@@ -45,7 +54,7 @@ const clampN = (n: number, lo: number, hi: number): number => Math.max(lo, Math.
 const modN = (n: number, m: number): number => ((n % m) + m) % m;
 
 export function createGridEditor(deps: GridEditorDeps): GridEditor {
-  const { canvas, container, store, doc } = deps;
+  const { canvas, container, store, doc, sel } = deps;
   const ctx = get2d(canvas);
 
   // offscreen canvases
@@ -162,6 +171,18 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
         artSize: Lf * z,
       });
     }
+
+    // selection ants — float bounds if one is floating, else the marked rect
+    const marked = sel.rect;
+    if (marked) {
+      ctx.save();
+      ctx.translate(ox, oy);
+      ctx.beginPath();
+      ctx.rect(0, 0, Lf * z, Lf * z);
+      ctx.clip();
+      drawMarquee(ctx, marked.x - fx0, marked.y - fy0, marked.w, marked.h, z);
+      ctx.restore();
+    }
   }
 
   function requestRender(): void {
@@ -210,6 +231,13 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
       snap = null;
       deps.commit();
     },
+    setSelection(r) {
+      sel.rect = r;
+      bumpSel();
+    },
+    getSelection() {
+      return sel.rect;
+    },
   };
 
   // ── pointer plumbing ───────────────────────────────────────────────
@@ -240,6 +268,10 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
       const L = viewSize(doc);
       return { x: clampN(x, 0, L - 1), y: clampN(y, 0, L - 1) };
     }
+    if (deps.getTool().clampToWindow) {
+      // selection gestures never reach past what the window shows
+      return { x: clampN(x, fx0, fx0 + Lf - 1), y: clampN(y, fy0, fy0 + Lf - 1) };
+    }
     const C = doc.cellSize;
     if (s.mode === "border") {
       // focused border: the pointer cannot paint outside the focused cell
@@ -267,6 +299,16 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     store.set({ dirtyDoc: store.get().dirtyDoc + 1 });
   }
 
+  function bumpSel(): void {
+    store.set({ dirtySel: store.get().dirtySel + 1 });
+  }
+
+  /** Passive tools (selection) re-render only — no preview / autosave churn. */
+  function bumpForTool(): void {
+    if (deps.getTool().passive) bumpSel();
+    else bumpDoc();
+  }
+
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     if (!inArt(e)) return; // no stroke (and no Alt-pick) starts from the letterbox
@@ -278,7 +320,7 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     }
     drawing = true;
     deps.getTool().onDown(p, toolCtx);
-    bumpDoc();
+    bumpForTool();
   });
 
   canvas.addEventListener("pointermove", (e) => {
@@ -293,14 +335,14 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     }
     if (!drawing) return;
     deps.getTool().onMove(p, toolCtx);
-    bumpDoc();
+    bumpForTool();
   });
 
   const finish = (e: PointerEvent): void => {
     if (!drawing) return;
     drawing = false;
     deps.getTool().onUp(toPt(e), toolCtx);
-    bumpDoc();
+    bumpForTool();
   };
   canvas.addEventListener("pointerup", finish);
   canvas.addEventListener("pointercancel", finish);
@@ -312,6 +354,7 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
   store.subscribe((s, prev) => {
     if (
       s.dirtyDoc !== prev.dirtyDoc ||
+      s.dirtySel !== prev.dirtySel ||
       s.mode !== prev.mode ||
       s.cellSize !== prev.cellSize ||
       s.focus !== prev.focus

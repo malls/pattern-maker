@@ -8,6 +8,7 @@ import { line, rectOutline } from "./raster/raster";
 import type { Doc } from "./state/doc";
 import { clampCell, clearMode, createDoc, plotBorder, setCellSize, viewSize } from "./state/doc";
 import * as history from "./state/history";
+import { createSelection } from "./state/selection";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
 import { activeBuffer } from "./state/doc";
@@ -84,8 +85,12 @@ function boot(): void {
     hover: null,
     dirtyDoc: 0,
     dirtyPreview: 0,
+    dirtySel: 0,
     tip: restored ? "picked up where you left off" : (MODE_TIPS[startMode] ?? ""),
   });
+
+  // ── selection (ephemeral view state — never persisted, never in history) ──
+  const sel = createSelection();
 
   // ── actions ────────────────────────────────────────────────────────
   function bumpDoc(patch: Partial<AppState> = {}): void {
@@ -93,9 +98,32 @@ function boot(): void {
     store.set({ ...patch, dirtyDoc: s.dirtyDoc + 1, dirtyPreview: s.dirtyPreview + 1 });
   }
 
+  /** Selection changes re-render the editor only — no previews, no autosave. */
+  function bumpSel(patch: Partial<AppState> = {}): void {
+    store.set({ ...patch, dirtySel: store.get().dirtySel + 1 });
+  }
+
+  function deselect(): void {
+    if (!sel.rect) return;
+    sel.rect = null;
+    bumpSel({ tip: "deselected" });
+  }
+
+  /** Drop the marked rect silently (the window or the document changed under
+   *  it). Returns the dirtySel patch so callers can fold it into one set. */
+  function clearSelectionPatch(): Partial<AppState> {
+    sel.rect = null;
+    return { dirtySel: store.get().dirtySel + 1 };
+  }
+
   function setTool(id: string): void {
     const t = toolById(id);
-    store.set({ tool: t.id, tip: t.tip });
+    if (store.get().tool === t.id) {
+      store.set({ tip: t.tip });
+      return;
+    }
+    const patch = t.id === "select" ? {} : clearSelectionPatch();
+    store.set({ ...patch, tool: t.id, tip: t.tip });
   }
 
   function setColorHex(hex: string): void {
@@ -109,6 +137,7 @@ function boot(): void {
     const s = store.get();
     if (s.mode === mode) return;
     store.set({
+      ...clearSelectionPatch(),
       mode,
       focus: null, // mode switch always exits focus
       hover: null,
@@ -128,6 +157,7 @@ function boot(): void {
     }
     lastFocus = { cx, cy };
     store.set({
+      ...clearSelectionPatch(),
       focus: { cx, cy },
       hover: null,
       tip: s.mode === "border" ? "one cell. all the pixels" : "one tile. it still wraps",
@@ -136,7 +166,7 @@ function boot(): void {
 
   function exitFocus(): void {
     if (!store.get().focus) return;
-    store.set({ focus: null, hover: null, tip: "back to nine" });
+    store.set({ ...clearSelectionPatch(), focus: null, hover: null, tip: "back to nine" });
   }
 
   function toggleFocus(): void {
@@ -170,7 +200,7 @@ function boot(): void {
       if (cx < 0 || cx > 2 || cy < 0 || cy > 2) return;
     }
     lastFocus = { cx, cy };
-    store.set({ focus: { cx, cy }, hover: null });
+    store.set({ ...clearSelectionPatch(), focus: { cx, cy }, hover: null });
   }
 
   function doUndo(): void {
@@ -195,7 +225,7 @@ function boot(): void {
     const s = store.get();
     history.push(hist, doc, s.mode);
     clearMode(doc, s.mode);
-    bumpDoc({ tip: "cleared. fresh start" });
+    bumpDoc({ ...clearSelectionPatch(), tip: "cleared. fresh start" });
   }
 
   function setCell(raw: number, atLimitTip?: string): void {
@@ -207,7 +237,11 @@ function boot(): void {
     }
     history.pushBoth(hist, doc);
     setCellSize(doc, next);
-    bumpDoc({ cellSize: next, tip: `cell ${String(next).padStart(3, "0")}` });
+    bumpDoc({
+      ...clearSelectionPatch(),
+      cellSize: next,
+      tip: `cell ${String(next).padStart(3, "0")}`,
+    });
   }
 
   function stepCell(delta: number): void {
@@ -230,6 +264,7 @@ function boot(): void {
     doc.border = p.doc.border;
     doc.tile = p.doc.tile;
     bumpDoc({
+      ...clearSelectionPatch(),
       mode: p.mode,
       cellSize: doc.cellSize,
       color: hexToU32(p.colorHex) ?? store.get().color,
@@ -354,6 +389,7 @@ function boot(): void {
     container: bezel,
     store,
     doc,
+    sel,
     getTool: () => toolById(store.get().tool),
     beginStroke: () => history.push(hist, doc, store.get().mode),
     commit: () => store.set({ dirtyPreview: store.get().dirtyPreview + 1 }),
@@ -379,7 +415,9 @@ function boot(): void {
     }
     if (e.altKey) return;
     if (key === "escape") {
-      if (store.get().focus) exitFocus(); // don't swallow Esc otherwise
+      // selection always wins over focus-exit; never swallowed when idle
+      if (sel.rect) deselect();
+      else if (store.get().focus) exitFocus();
       return;
     }
     if (store.get().focus && key.startsWith("arrow")) {
@@ -456,6 +494,11 @@ function boot(): void {
       mode: s.mode,
       cellSize: s.cellSize,
       focus: s.focus,
+      sel: sel.float
+        ? { w: sel.float.buf.w, h: sel.float.buf.h, floating: true }
+        : sel.rect
+          ? { w: sel.rect.w, h: sel.rect.h, floating: false }
+          : null,
       tip: s.tip,
     });
   }

@@ -8,6 +8,8 @@ export interface LcdState {
   mode: string;
   cellSize: number;
   focus: { cx: number; cy: number } | null;
+  /** marked region (or the floating paste's bounds), or null */
+  sel: { w: number; h: number; floating: boolean } | null;
   tip: string;
 }
 
@@ -28,6 +30,10 @@ export function createLcd(): LcdView {
   const focusOffEl = h("span", { text: "—" });
   const focusOnEl = h("b", { text: "" });
   focusOnEl.style.display = "none";
+  // sel value: plain "—" when nothing marked, orange live size when marked
+  const selOffEl = h("span", { text: "—" });
+  const selOnEl = h("b", { text: "" });
+  selOnEl.style.display = "none";
   const tipEl = h("span", { text: "" });
 
   const root = h(
@@ -48,6 +54,7 @@ export function createLcd(): LcdView {
     h("span", {}, h("span", { className: "dim", text: "mode" }), " ", modeEl),
     h("span", {}, h("span", { className: "dim", text: "cell" }), " ", cellEl),
     h("span", {}, h("span", { className: "dim", text: "focus" }), " ", focusOffEl, focusOnEl),
+    h("span", {}, h("span", { className: "dim", text: "sel" }), " ", selOffEl, selOnEl),
     h(
       "span",
       { className: "grow" },
@@ -72,6 +79,14 @@ export function createLcd(): LcdView {
       } else {
         focusOnEl.style.display = "none";
         focusOffEl.style.display = "";
+      }
+      if (s.sel) {
+        selOnEl.textContent = `${s.sel.w}×${s.sel.h}`;
+        selOnEl.style.display = "";
+        selOffEl.style.display = "none";
+      } else {
+        selOnEl.style.display = "none";
+        selOffEl.style.display = "";
       }
       tipEl.textContent = s.tip;
     },

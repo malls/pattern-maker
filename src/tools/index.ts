@@ -7,6 +7,7 @@ import { fillTool } from "./fill";
 import { lineTool } from "./line";
 import { pencil } from "./pencil";
 import { rectTool } from "./rect";
+import { selectTool } from "./select";
 import type { Tool } from "./types";
 
 export const TOOLS: readonly Tool[] = [
@@ -17,6 +18,7 @@ export const TOOLS: readonly Tool[] = [
   ellipseTool,
   fillTool,
   eyedropper,
+  selectTool,
 ];
 
 export function toolById(id: string): Tool {
