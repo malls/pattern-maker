@@ -92,7 +92,7 @@ function boot(): void {
     color: hexToU32(startColor) ?? 0xff000000,
     colorHex: startColor,
     cellSize: doc.cellSize,
-    palette: DEFAULT_PALETTE,
+    palette: restored ? restored.palette : DEFAULT_PALETTE,
     focus: null,
     hover: null,
     exportScale: 1, // session-only: a restored project never dictates it
@@ -460,7 +460,7 @@ function boot(): void {
 
   function doSave(): void {
     const s = store.get();
-    downloadProject(doc, s.mode, s.colorHex);
+    downloadProject(doc, s.mode, s.colorHex, s.palette);
     store.set({ tip: "pattern.json" });
   }
 
@@ -476,6 +476,7 @@ function boot(): void {
       cellSize: doc.cellSize,
       color: hexToU32(p.colorHex) ?? store.get().color,
       colorHex: p.colorHex,
+      palette: p.palette,
       focus: null, // loading swaps mode/doc under the view — never keep focus
       hover: null,
       tip: "project loaded",
@@ -744,14 +745,15 @@ function boot(): void {
   // ── autosave (~500 ms after changes settle) ────────────────────────
   const debouncedAutosave = debounce(500, () => {
     const s = store.get();
-    autosave(doc, s.mode, s.colorHex);
+    autosave(doc, s.mode, s.colorHex, s.palette);
   });
   store.subscribe((s, prev) => {
     if (
       s.dirtyDoc !== prev.dirtyDoc ||
       s.dirtyPreview !== prev.dirtyPreview ||
       s.mode !== prev.mode ||
-      s.colorHex !== prev.colorHex
+      s.colorHex !== prev.colorHex ||
+      s.palette !== prev.palette
     ) {
       debouncedAutosave();
     }

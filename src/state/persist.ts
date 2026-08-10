@@ -5,6 +5,8 @@
 import { fromBase64, hexToU32, toBase64 } from "../raster/buffer";
 import type { Doc, Mode } from "./doc";
 import { MAX_CELL, MIN_CELL, clearLockedCenter } from "./doc";
+import type { PaletteId } from "./palettes";
+import { DEFAULT_PALETTE, isPaletteId } from "./palettes";
 
 export const STORAGE_KEY = "pattern-maker.project.v1";
 
@@ -15,6 +17,9 @@ export interface ProjectV1 {
   mode: Mode;
   cellSize: number;
   color: string;
+  /** Added after v1 shipped, so it is required on write and tolerated on read
+   *  (see decodeProject) — additive, no version bump. */
+  palette: PaletteId;
   border: { w: number; h: number; data: string };
   tile: { w: number; h: number; data: string };
 }
@@ -23,9 +28,10 @@ export interface DecodedProject {
   doc: Doc;
   mode: Mode;
   colorHex: string;
+  palette: PaletteId;
 }
 
-export function encodeProject(doc: Doc, mode: Mode, colorHex: string): string {
+export function encodeProject(doc: Doc, mode: Mode, colorHex: string, palette: PaletteId): string {
   const p: ProjectV1 = {
     app: "pattern-maker",
     version: 1,
@@ -33,6 +39,7 @@ export function encodeProject(doc: Doc, mode: Mode, colorHex: string): string {
     mode,
     cellSize: doc.cellSize,
     color: colorHex,
+    palette,
     border: { w: doc.border.w, h: doc.border.h, data: toBase64(doc.border) },
     tile: { w: doc.tile.w, h: doc.tile.h, data: toBase64(doc.tile) },
   };
@@ -68,6 +75,11 @@ export function decodeProject(json: string): DecodedProject | null {
   const color = p["color"];
   if (typeof color !== "string" || hexToU32(color) === null) return null;
 
+  // The one field that never rejects a file: absent (every project saved
+  // before palettes existed), unknown, or malformed all mean the house set.
+  // A drawing must not be lost over a cosmetic string.
+  const palette = isPaletteId(p["palette"]) ? p["palette"] : DEFAULT_PALETTE;
+
   const readBuf = (v: unknown, w: number, h: number) => {
     if (typeof v !== "object" || v === null) return null;
     const o = v as Record<string, unknown>;
@@ -81,14 +93,14 @@ export function decodeProject(json: string): DecodedProject | null {
 
   const doc: Doc = { cellSize, border, tile };
   clearLockedCenter(doc); // enforce the invariant whatever the file claims
-  return { doc, mode, colorHex: color };
+  return { doc, mode, colorHex: color, palette };
 }
 
 /* ── localStorage autosave ──────────────────────────────────────────── */
 
-export function autosave(doc: Doc, mode: Mode, colorHex: string): void {
+export function autosave(doc: Doc, mode: Mode, colorHex: string, palette: PaletteId): void {
   try {
-    localStorage.setItem(STORAGE_KEY, encodeProject(doc, mode, colorHex));
+    localStorage.setItem(STORAGE_KEY, encodeProject(doc, mode, colorHex, palette));
   } catch {
     /* storage full or unavailable — autosave is best-effort */
   }
@@ -106,8 +118,10 @@ export function loadAutosave(): DecodedProject | null {
 
 /* ── file download / import ─────────────────────────────────────────── */
 
-export function downloadProject(doc: Doc, mode: Mode, colorHex: string): void {
-  const blob = new Blob([encodeProject(doc, mode, colorHex)], { type: "application/json" });
+export function downloadProject(doc: Doc, mode: Mode, colorHex: string, palette: PaletteId): void {
+  const blob = new Blob([encodeProject(doc, mode, colorHex, palette)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.download = "pattern.json";
