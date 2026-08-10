@@ -49,6 +49,11 @@ export function resizeNearest(b: PixelBuffer, w: number, h: number): PixelBuffer
   return out;
 }
 
+/** Integer nearest-neighbor upscale (1 returns the same buffer — no copy). */
+export function scaleUp(b: PixelBuffer, factor: number): PixelBuffer {
+  return factor <= 1 ? b : resizeNearest(b, b.w * factor, b.h * factor);
+}
+
 /* ── color packing ──────────────────────────────────────────────────── */
 
 export function packRGBA(r: number, g: number, b: number, a: number): number {
