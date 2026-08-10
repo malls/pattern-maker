@@ -4,12 +4,19 @@ import "./styles/tokens.css";
 import "./styles/app.css";
 
 import type { PixelBuffer } from "./raster/buffer";
-import { hexToU32 } from "./raster/buffer";
+import { clone, hexToU32 } from "./raster/buffer";
 import { line, rectOutline } from "./raster/raster";
 import type { Doc } from "./state/doc";
 import { clampCell, clearMode, createDoc, plotBorder, setCellSize, viewSize } from "./state/doc";
 import * as history from "./state/history";
-import { copyRect, createSelection, eraseRect } from "./state/selection";
+import {
+  clampFloatPos,
+  copyRect,
+  createSelection,
+  cropTopLeft,
+  eraseRect,
+  stampFloat,
+} from "./state/selection";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
 import { activeBuffer } from "./state/doc";
@@ -154,12 +161,101 @@ function boot(): void {
     bumpDoc({ tip: "erased" });
   }
 
+  /** The visible window in view coordinates (the focused cell, or the view). */
+  function windowBox(): { x0: number; y0: number; size: number } {
+    const f = store.get().focus;
+    const C = doc.cellSize;
+    return f
+      ? { x0: f.cx * C, y0: f.cy * C, size: C }
+      : { x0: 0, y0: 0, size: viewSize(doc) };
+  }
+
+  /** Paste: the clipboard starts floating, centred in the current window. */
+  function pasteClip(): void {
+    const clip = clipboard;
+    if (!clip) {
+      store.set({ tip: "nothing to paste" });
+      return;
+    }
+    if (sel.float) stampFloatAction(); // a second paste commits the first
+    const L = viewSize(doc);
+    const buf = cropTopLeft(clip, Math.min(clip.w, L), Math.min(clip.h, L));
+    const focus = store.get().focus;
+    if (focus && (buf.w > doc.cellSize || buf.h > doc.cellSize)) {
+      exitFocus(); // doesn't fit the cell — paste into the full view instead
+      store.set({ tip: "back to nine. it didn't fit" });
+    }
+    setTool("select"); // paste always hands you the tool that moves it
+    const win = windowBox();
+    const f = {
+      buf: clone(buf),
+      x: win.x0 + Math.floor((win.size - buf.w) / 2),
+      y: win.y0 + Math.floor((win.size - buf.h) / 2),
+    };
+    const p = clampFloatPos(f, win.x0, win.y0, win.size, win.size);
+    f.x = p.x;
+    f.y = p.y;
+    sel.float = f;
+    sel.rect = null;
+    bumpSel({ tip: "floating. drag it. enter stamps" });
+  }
+
+  /** Commit the float into the doc — one undo entry; the stamped bounds stay
+   *  selected so an immediate re-copy / re-cut works. */
+  function stampFloatAction(): void {
+    const f = sel.float;
+    if (!f) return;
+    const s = store.get();
+    history.push(hist, doc, s.mode);
+    stampFloat(doc, s.mode, f);
+    sel.float = null;
+    sel.rect = { x: f.x, y: f.y, w: f.buf.w, h: f.buf.h };
+    bumpDoc({ dirtySel: s.dirtySel + 1, tip: "stamped" });
+  }
+
+  /** Drop the float without touching the doc (the clipboard survives). */
+  function cancelFloat(): void {
+    if (!sel.float) return;
+    sel.float = null;
+    sel.rect = null;
+    bumpSel({ tip: "paste dropped" });
+  }
+
+  function nudgeFloat(dx: number, dy: number): void {
+    const f = sel.float;
+    if (!f) return;
+    const win = windowBox();
+    const p = clampFloatPos(
+      { buf: f.buf, x: f.x + dx, y: f.y + dy },
+      win.x0,
+      win.y0,
+      win.size,
+      win.size,
+    );
+    if (p.x === f.x && p.y === f.y) return;
+    f.x = p.x;
+    f.y = p.y;
+    bumpSel();
+  }
+
+  /** Anything that changes what's under the float commits it first. */
+  function commitFloatFirst(): void {
+    if (sel.float) stampFloatAction();
+  }
+
+  /** Load / clear replace the document — stamping into it would be noise. */
+  function dropSelection(): Partial<AppState> {
+    sel.float = null;
+    return clearSelectionPatch();
+  }
+
   function setTool(id: string): void {
     const t = toolById(id);
     if (store.get().tool === t.id) {
       store.set({ tip: t.tip });
       return;
     }
+    commitFloatFirst();
     const patch = t.id === "select" ? {} : clearSelectionPatch();
     store.set({ ...patch, tool: t.id, tip: t.tip });
   }
@@ -172,8 +268,10 @@ function boot(): void {
 
   function setMode(mode: string): void {
     if (mode !== "border" && mode !== "tile") return;
+    const s0 = store.get();
+    if (s0.mode === mode) return;
+    commitFloatFirst(); // stamps into the outgoing mode
     const s = store.get();
-    if (s.mode === mode) return;
     store.set({
       ...clearSelectionPatch(),
       mode,
@@ -193,6 +291,7 @@ function boot(): void {
       store.set({ tip: "center's locked. pick a live cell" });
       return;
     }
+    commitFloatFirst(); // the window is about to change under the float
     lastFocus = { cx, cy };
     store.set({
       ...clearSelectionPatch(),
@@ -204,6 +303,7 @@ function boot(): void {
 
   function exitFocus(): void {
     if (!store.get().focus) return;
+    commitFloatFirst();
     store.set({ ...clearSelectionPatch(), focus: null, hover: null, tip: "back to nine" });
   }
 
@@ -237,11 +337,17 @@ function boot(): void {
       cy += dy;
       if (cx < 0 || cx > 2 || cy < 0 || cy > 2) return;
     }
+    commitFloatFirst();
     lastFocus = { cx, cy };
     store.set({ ...clearSelectionPatch(), focus: { cx, cy }, hover: null });
   }
 
   function doUndo(): void {
+    // the float never entered the doc — "undo the paste" is just dropping it
+    if (sel.float) {
+      cancelFloat();
+      return;
+    }
     const s = store.get();
     if (history.undo(hist, doc, s.mode)) {
       bumpDoc({ cellSize: doc.cellSize, tip: "undone" });
@@ -251,6 +357,10 @@ function boot(): void {
   }
 
   function doRedo(): void {
+    if (sel.float) {
+      cancelFloat();
+      return;
+    }
     const s = store.get();
     if (history.redo(hist, doc, s.mode)) {
       bumpDoc({ cellSize: doc.cellSize, tip: "redone" });
@@ -263,7 +373,7 @@ function boot(): void {
     const s = store.get();
     history.push(hist, doc, s.mode);
     clearMode(doc, s.mode);
-    bumpDoc({ ...clearSelectionPatch(), tip: "cleared. fresh start" });
+    bumpDoc({ ...dropSelection(), tip: "cleared. fresh start" });
   }
 
   function setCell(raw: number, atLimitTip?: string): void {
@@ -273,7 +383,8 @@ function boot(): void {
       store.set({ tip: atLimitTip ?? `cell ${String(cur).padStart(3, "0")} already` });
       return;
     }
-    history.pushBoth(hist, doc);
+    commitFloatFirst(); // float coords are in the CURRENT cell size — stamp
+    history.pushBoth(hist, doc); //  before the resample, never after
     setCellSize(doc, next);
     bumpDoc({
       ...clearSelectionPatch(),
@@ -302,7 +413,7 @@ function boot(): void {
     doc.border = p.doc.border;
     doc.tile = p.doc.tile;
     bumpDoc({
-      ...clearSelectionPatch(),
+      ...dropSelection(),
       mode: p.mode,
       cellSize: doc.cellSize,
       color: hexToU32(p.colorHex) ?? store.get().color,
@@ -429,6 +540,7 @@ function boot(): void {
     doc,
     sel,
     getTool: () => toolById(store.get().tool),
+    stampFloat: () => stampFloatAction(),
     beginStroke: () => history.push(hist, doc, store.get().mode),
     commit: () => store.set({ dirtyPreview: store.get().dirtyPreview + 1 }),
   });
@@ -454,17 +566,35 @@ function boot(): void {
       } else if (key === "x") {
         if (sel.rect) e.preventDefault();
         cutSel();
+      } else if (key === "v") {
+        if (clipboard) e.preventDefault();
+        pasteClip();
       }
       return;
     }
     if (e.altKey) return;
     if (key === "escape") {
       // selection always wins over focus-exit; never swallowed when idle
-      if (sel.rect) deselect();
+      if (sel.float) cancelFloat();
+      else if (sel.rect) deselect();
       else if (store.get().focus) exitFocus();
       return;
     }
-    if ((key === "delete" || key === "backspace") && sel.rect) {
+    if (key === "enter" && sel.float) {
+      e.preventDefault();
+      stampFloatAction();
+      return;
+    }
+    if (sel.float && key.startsWith("arrow")) {
+      e.preventDefault();
+      const d = e.shiftKey ? 8 : 1;
+      if (key === "arrowleft") nudgeFloat(-d, 0);
+      else if (key === "arrowright") nudgeFloat(d, 0);
+      else if (key === "arrowup") nudgeFloat(0, -d);
+      else if (key === "arrowdown") nudgeFloat(0, d);
+      return;
+    }
+    if ((key === "delete" || key === "backspace") && sel.rect && !sel.float) {
       e.preventDefault();
       deleteSel();
       return;

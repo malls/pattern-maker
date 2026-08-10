@@ -31,6 +31,12 @@ export interface ToolContext {
   /** live-update the marquee rect during a drag (normalized); null deselects */
   setSelection(r: SelRect | null): void;
   getSelection(): SelRect | null;
+  /** the floating paste's geometry, or null */
+  getFloat(): { x: number; y: number; w: number; h: number } | null;
+  /** move the float (clamped to the visible window by the implementation) */
+  moveFloatTo(x: number, y: number): void;
+  /** stamp the float into the doc — one undo entry */
+  stampFloat(): void;
 }
 
 export interface Tool {

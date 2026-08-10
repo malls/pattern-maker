@@ -13,6 +13,7 @@ import type { AppState, Store } from "../state/store";
 import type { Doc } from "../state/doc";
 import { activeBuffer, floodView, getViewPx, plotView, viewSize } from "../state/doc";
 import type { SelectionState } from "../state/selection";
+import { clampFloatPos } from "../state/selection";
 import type { Pt, Tool, ToolContext } from "../tools/types";
 import {
   drawCenterLock,
@@ -30,6 +31,8 @@ export interface GridEditorDeps {
   /** live selection state, held by main and mutated in place (the doc pattern) */
   sel: SelectionState;
   getTool(): Tool;
+  /** commit the floating paste into the doc (one undo entry) */
+  stampFloat(): void;
   /** push an undo entry for the active mode (called at gesture start) */
   beginStroke(): void;
   /** gesture finished — regenerate previews / autosave */
@@ -60,9 +63,11 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
   // offscreen canvases
   const offNative = document.createElement("canvas"); // L×L composed view
   const offTile = document.createElement("canvas"); // C×C tile scratch
+  const offFloat = document.createElement("canvas"); // floating paste scratch
   const checker = document.createElement("canvas"); // device-scale cache
   const offNativeCtx = get2d(offNative);
   const offTileCtx = get2d(offTile);
+  const offFloatCtx = get2d(offFloat);
   const checkerCtx = get2d(checker);
 
   // ── the art rect (single source of truth for layout() and toPt()) ──
@@ -144,6 +149,19 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
       }
     }
 
+    // the floating paste sits above the art: clear its footprint, then blit it
+    // verbatim, so the checker shows through its transparent pixels — exactly
+    // what stamping will do. (Tile mode draws it once, not ×9: it isn't in the
+    // tile yet.)
+    const flt = sel.float;
+    if (flt) {
+      offFloat.width = flt.buf.w;
+      offFloat.height = flt.buf.h;
+      offFloatCtx.putImageData(bufferImageData(flt.buf), 0, 0);
+      offNativeCtx.clearRect(flt.x, flt.y, flt.buf.w, flt.buf.h);
+      offNativeCtx.drawImage(offFloat, flt.x, flt.y);
+    }
+
     // display: clear the full canvas (letterbox shows the light-well bezel),
     // then checker under the art, the art window, then chrome — all inside
     // the art rect.
@@ -173,7 +191,9 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     }
 
     // selection ants — float bounds if one is floating, else the marked rect
-    const marked = sel.rect;
+    const marked = flt
+      ? { x: flt.x, y: flt.y, w: flt.buf.w, h: flt.buf.h }
+      : sel.rect;
     if (marked) {
       ctx.save();
       ctx.translate(ox, oy);
@@ -237,6 +257,22 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     },
     getSelection() {
       return sel.rect;
+    },
+    getFloat() {
+      const f = sel.float;
+      return f ? { x: f.x, y: f.y, w: f.buf.w, h: f.buf.h } : null;
+    },
+    moveFloatTo(x, y) {
+      const f = sel.float;
+      if (!f) return;
+      const p = clampFloatPos({ buf: f.buf, x, y }, fx0, fy0, Lf, Lf);
+      if (p.x === f.x && p.y === f.y) return;
+      f.x = p.x;
+      f.y = p.y;
+      bumpSel();
+    },
+    stampFloat() {
+      deps.stampFloat();
     },
   };
 
