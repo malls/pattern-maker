@@ -8,6 +8,8 @@ export interface LcdState {
   mode: string;
   cellSize: number;
   focus: { cx: number; cy: number } | null;
+  /** exported image size in pixels (square); orange once it's been upscaled */
+  out: { size: number; scaled: boolean };
   /** marked region (or the floating paste's bounds), or null */
   sel: { w: number; h: number; floating: boolean } | null;
   tip: string;
@@ -26,6 +28,10 @@ export function createLcd(): LcdView {
   const yEl = h("span", { text: "—" });
   const modeEl = h("b", { text: "border" });
   const cellEl = h("span", { text: "016" });
+  // out value: plain at 1×, orange once the export is upscaled
+  const outOffEl = h("span", { text: "" });
+  const outOnEl = h("b", { text: "" });
+  outOnEl.style.display = "none";
   // focus value: plain "—" when off, orange live value when focused
   const focusOffEl = h("span", { text: "—" });
   const focusOnEl = h("b", { text: "" });
@@ -53,6 +59,7 @@ export function createLcd(): LcdView {
     ),
     h("span", {}, h("span", { className: "dim", text: "mode" }), " ", modeEl),
     h("span", {}, h("span", { className: "dim", text: "cell" }), " ", cellEl),
+    h("span", {}, h("span", { className: "dim", text: "out" }), " ", outOffEl, outOnEl),
     h("span", {}, h("span", { className: "dim", text: "focus" }), " ", focusOffEl, focusOnEl),
     h("span", {}, h("span", { className: "dim", text: "sel" }), " ", selOffEl, selOnEl),
     h(
@@ -72,6 +79,16 @@ export function createLcd(): LcdView {
       yEl.textContent = s.hover ? pad3(s.hover.y) : "—";
       modeEl.textContent = s.mode;
       cellEl.textContent = pad3(s.cellSize);
+      const out = `${pad3(s.out.size)}×${pad3(s.out.size)}`;
+      if (s.out.scaled) {
+        outOnEl.textContent = out;
+        outOnEl.style.display = "";
+        outOffEl.style.display = "none";
+      } else {
+        outOffEl.textContent = out;
+        outOffEl.style.display = "";
+        outOnEl.style.display = "none";
+      }
       if (s.focus) {
         focusOnEl.textContent = `${s.focus.cx + 1}·${s.focus.cy + 1}`;
         focusOnEl.style.display = "";

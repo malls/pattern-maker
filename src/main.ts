@@ -91,6 +91,8 @@ function boot(): void {
     cellSize: doc.cellSize,
     focus: null,
     hover: null,
+    exportScale: 1, // session-only: a restored project never dictates it
+
     dirtyDoc: 0,
     dirtyPreview: 0,
     dirtySel: 0,
@@ -437,6 +439,12 @@ function boot(): void {
     });
   }
 
+  /** Side of the square the export/copy would write: the 3C×3C border sheet or
+   *  the C×C tile, times the export scale. */
+  function outputSize(s: AppState): number {
+    return (s.mode === "border" ? 3 : 1) * doc.cellSize * s.exportScale;
+  }
+
   function doCopyCss(): void {
     const s = store.get();
     const uri = bufferToDataURI(activeBuffer(doc, s.mode));
@@ -676,6 +684,7 @@ function boot(): void {
       mode: s.mode,
       cellSize: s.cellSize,
       focus: s.focus,
+      out: { size: outputSize(s), scaled: s.exportScale > 1 },
       sel: sel.float
         ? { w: sel.float.buf.w, h: sel.float.buf.h, floating: true }
         : sel.rect

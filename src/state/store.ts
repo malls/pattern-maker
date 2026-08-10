@@ -43,6 +43,9 @@ export interface AppState {
    *  cx, cy ∈ {0,1,2}; border mode never allows (1,1). */
   focus: { cx: number; cy: number } | null;
   hover: { x: number; y: number } | null;
+  /** PNG/CSS output upscale ∈ {1,2,4}. Session-only UI state — never
+   *  persisted, never in undo history, never applied to the live previews. */
+  exportScale: 1 | 2 | 4;
   dirtyDoc: number;
   dirtyPreview: number;
   /** bumped on any selection/float change. Drives the editor re-render ONLY —
