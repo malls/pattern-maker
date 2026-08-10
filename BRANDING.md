@@ -58,9 +58,59 @@ Warm-biased grays for the body, charcoal for anything that displays information,
 - No gradients on any surface. The only permitted "lighting" is the device's inset top highlight, the key drop shadow, and the LED glow (`0 0 5px rgba(255,78,0,.9)`). Two functional exceptions: the corner screws' machined shading and the custom-color well's spectrum ring — both tiny, both earn it.
 - Text is ink-on-plastic or lcd-text-on-charcoal. Never set text in orange except single live values on the LCD.
 
-### The drawing palette
+### The drawing palettes
 
-The 16 in-canvas color chips (warm neutrals row, then a restrained industrial color row: orange, red `#D22E2E`, yellow `#F2B500`, green `#3E9B4F`, teal `#2E8B8B`, blue `#2E5FD2`, violet `#7B4FD2`, magenta `#C43E8F`, pink `#F2A0B8`, brown `#8A5A3B`, cream `#EFE6D0`) live in the demo source and are part of the brand — slightly muted, screen-print flavored, nothing neon. User artwork may be loud; the chips that make it should still look considered.
+The in-canvas color chips are part of the brand — slightly muted, screen-print flavored, nothing neon. User artwork may be loud; the chips that make it should still look considered. There are five sets, stepped from the deck, and every one of them obeys the same slot contract.
+
+**The slot contract.** Each palette is exactly 16 swatches in fixed roles, which is what makes switching sets safe — the same two chips are ink and paper in every scheme, so muscle memory survives.
+
+| Slot | Role | Guarantee |
+|---|---|---|
+| 0 | ink | The palette's usable near-black. Always drawable as "dark". |
+| 1–3 | spine | Three ascending mid values, tinted to the palette's temperature. |
+| 4 | paper | `#FBFAF8` — the `--paper` token, **identical in every palette**. |
+| 5–15 | the colors | Wash, earth, accent, then the hue wheel: red, yellow, green, teal, blue, violet, magenta, pink. |
+
+Slots 0–4 are the value spine, dark to light. Paper is fixed and ink is not because you print onto one stock and the inks change: the substrate is a constant of the instrument, the pigment moves with the scheme. `rainbow` is the one departure from the soft part of the contract — it spends all eleven color slots on a single hue sweep, on purpose.
+
+**The five sets**, in stepper order, quiet to loud. Values in slot order; these are brand values and this table is the source of truth for them (`src/state/palettes.ts` matches it exactly).
+
+**`shop`** — the house set. Restrained industrial, screen-print flavored.
+
+```
+#232320 #575651 #8B8A85 #C6C5BF #FBFAF8 #EFE6D0 #8A5A3B #FF4E00
+#D22E2E #F2B500 #3E9B4F #2E8B8B #2E5FD2 #7B4FD2 #C43E8F #F2A0B8
+```
+
+**`mono`** — a true value ramp, warm-biased. No hue anywhere. Every gray in this brand holds R > G > B; a neutral ramp would read cold against the plastic and would be the one place the grays disagree. The fine steps sit close together deliberately — that is what monochrome is for.
+
+```
+#232320 #575651 #8B8A85 #C6C5BF #FBFAF8 #2E2D29 #3C3B36 #4A4944
+#626159 #767570 #9C9B95 #ADACA6 #BDBCB6 #D3D2CC #E0DFD9 #EDEBE5
+```
+
+**`pastel`** — chalky, high-value, low chroma. Sugar paper and soft pigment. The spine is tinted lilac and the ink is a violet-charcoal rather than a black — a pastel set with a hard black in it stops being one, but it is still dark enough to draw with.
+
+```
+#3B3742 #6F6A78 #A9A2AE #D8D3DC #FBFAF8 #F7E9E0 #C39B87 #F0907A
+#F0A3A0 #F2DFA0 #B3D6A8 #A3D2CE #A8BEE0 #C0B2E0 #E0AFD1 #F5C6D3
+```
+
+**`gem`** — deep and expensive. Obsidian ink, a cool slate spine, pearl wash, bronze, topaz, then the stones: garnet, citrine, emerald, tourmaline, sapphire, amethyst, rhodolite, rose quartz. Rich but still deep-and-slightly-dirty, never fluorescent.
+
+```
+#14161A #2B3038 #4A525E #9AA2AC #FBFAF8 #E7E9ED #7E5F2E #C4711A
+#8E1F32 #C99A21 #1D6E4E #17696E #1E3F8F #5B2E8F #961C63 #C4708C
+```
+
+**`rainbow`** — one ordered hue sweep over eleven steps, on the neutral brand spine so the sweep reads clean against it. All eleven are held at a similar mid value and moderate chroma: a printed spectrum chart, not an RGB primary set. If one ever reads as neon, that is a bug in the value, not a licence to brighten the rest.
+
+```
+#232320 #575651 #8B8A85 #C6C5BF #FBFAF8 #C9332F #D9701C #D8AE14
+#86A32B #3B9457 #1E9083 #2081A5 #2B5CB8 #5A46B5 #8C41A8 #C0417E
+```
+
+`shop` is the default and is the original brand set, unchanged; it is also the set the demo ships. The custom-color well is unaffected by palette choice — it keeps its fixed spectrum ring and stays available in all five, which is what makes a palette a starting point rather than a cage.
 
 ## 4. Typography
 
