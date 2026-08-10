@@ -1,6 +1,11 @@
 /** The left canvas: crisp integer zoom, DPR handling, pointer→pixel mapping,
  *  render loop, and the ToolContext bridge between pointer gestures and the
- *  document. */
+ *  document.
+ *
+ *  Sizing model: the canvas always fills the bezel's inner box (a fixed
+ *  footprint set in CSS); the art is drawn centered inside it at the largest
+ *  integer device-pixel zoom that fits, letterboxed on the charcoal. Changing
+ *  cell size changes resolution only, never the editor's on-screen size. */
 
 import type { PixelBuffer } from "../raster/buffer";
 import { alphaOf, u32ToHex } from "../raster/buffer";
@@ -36,6 +41,8 @@ function get2d(c: HTMLCanvasElement): CanvasRenderingContext2D {
   return ctx;
 }
 
+const clampN = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
+
 export function createGridEditor(deps: GridEditorDeps): GridEditor {
   const { canvas, container, store, doc } = deps;
   const ctx = get2d(canvas);
@@ -48,8 +55,20 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
   const offTileCtx = get2d(offTile);
   const checkerCtx = get2d(checker);
 
+  // ── the art rect (single source of truth for layout() and toPt()) ──
+  // Canvas backing store is devW×devH device px; the art occupies the
+  // square [ox, ox+Lf·z) × [oy, oy+Lf·z), where Lf is the logical size
+  // shown (whole view L today; one cell C when focused) and (fx0, fy0)
+  // is the logical origin of that window in view coordinates.
   let z = 1;
   let dpr = window.devicePixelRatio || 1;
+  let devW = 0;
+  let devH = 0;
+  let ox = 0;
+  let oy = 0;
+  let Lf = 0;
+  let fx0 = 0;
+  let fy0 = 0;
   let laidOutL = 0;
   let needLayout = true;
   let renderQueued = false;
@@ -58,18 +77,25 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     dpr = window.devicePixelRatio || 1;
     const L = viewSize(doc);
     const rect = container.getBoundingClientRect();
-    const availW = Math.max(32, rect.width - BEZEL_PAD * 2);
-    const availH = Math.max(32, rect.height - BEZEL_PAD * 2);
-    const avail = Math.min(availW, availH);
-    z = Math.max(1, Math.floor((avail * dpr) / L));
-    const device = L * z;
-    canvas.width = device;
-    canvas.height = device;
-    canvas.style.width = `${device / dpr}px`;
-    canvas.style.height = `${device / dpr}px`;
-    checker.width = device;
-    checker.height = device;
-    drawChecker(checkerCtx, L, z);
+    const cssW = Math.max(32, rect.width - BEZEL_PAD * 2);
+    const cssH = Math.max(32, rect.height - BEZEL_PAD * 2);
+    devW = Math.floor(cssW * dpr);
+    devH = Math.floor(cssH * dpr);
+    canvas.width = devW;
+    canvas.height = devH;
+    canvas.style.width = `${devW / dpr}px`;
+    canvas.style.height = `${devH / dpr}px`;
+    // largest integer device zoom that fits, centered, letterboxed
+    Lf = L;
+    fx0 = 0;
+    fy0 = 0;
+    z = Math.max(1, Math.floor(Math.min(devW, devH) / Lf));
+    const art = Lf * z;
+    ox = Math.floor((devW - art) / 2);
+    oy = Math.floor((devH - art) / 2);
+    checker.width = art;
+    checker.height = art;
+    drawChecker(checkerCtx, Lf, z);
     laidOutL = L;
     needLayout = false;
   }
@@ -88,7 +114,6 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     const L = viewSize(doc);
     if (needLayout || L !== laidOutL || (window.devicePixelRatio || 1) !== dpr) layout();
     const C = doc.cellSize;
-    const device = L * z;
 
     // compose the native-resolution view
     offNative.width = L;
@@ -107,13 +132,18 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
       }
     }
 
-    // display at device scale: checker under the art, art, then chrome
-    ctx.clearRect(0, 0, device, device);
-    ctx.drawImage(checker, 0, 0);
+    // display: clear the full canvas (letterbox shows the charcoal bezel),
+    // then checker under the art, the art window, then chrome — all inside
+    // the art rect.
+    ctx.clearRect(0, 0, devW, devH);
+    ctx.drawImage(checker, ox, oy);
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(offNative, 0, 0, device, device);
+    ctx.drawImage(offNative, fx0, fy0, Lf, Lf, ox, oy, Lf * z, Lf * z);
+    ctx.save();
+    ctx.translate(ox, oy);
     drawDelineation(ctx, L, z, s.mode);
     if (s.mode === "border") drawCenterLock(ctx, C, z, dpr);
+    ctx.restore();
   }
 
   function requestRender(): void {
@@ -167,12 +197,33 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
   // ── pointer plumbing ───────────────────────────────────────────────
   let drawing = false;
 
-  function toPt(e: PointerEvent): Pt {
+  /** Device-px position relative to the art rect's origin. */
+  function toArt(e: PointerEvent): { x: number; y: number } {
     const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * dpr - ox,
+      y: (e.clientY - rect.top) * dpr - oy,
+    };
+  }
+
+  /** True when the pointer is inside the art rect (not the letterbox). */
+  function inArt(e: PointerEvent): boolean {
+    const a = toArt(e);
+    const art = Lf * z;
+    return a.x >= 0 && a.y >= 0 && a.x < art && a.y < art;
+  }
+
+  function toPt(e: PointerEvent): Pt {
+    const a = toArt(e);
+    const x = Math.floor(a.x / z) + fx0;
+    const y = Math.floor(a.y / z) + fy0;
     const L = viewSize(doc);
-    const x = Math.floor(((e.clientX - rect.left) / rect.width) * L);
-    const y = Math.floor(((e.clientY - rect.top) / rect.height) * L);
-    return { x: Math.max(0, Math.min(L - 1, x)), y: Math.max(0, Math.min(L - 1, y)) };
+    return { x: clampN(x, 0, L - 1), y: clampN(y, 0, L - 1) };
+  }
+
+  /** What the LCD shows for a mapped point. */
+  function displayPt(p: Pt): Pt {
+    return p;
   }
 
   function bumpDoc(): void {
@@ -181,6 +232,7 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
 
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
+    if (!inArt(e)) return; // no stroke (and no Alt-pick) starts from the letterbox
     canvas.setPointerCapture(e.pointerId);
     const p = toPt(e);
     if (e.altKey) {
@@ -194,9 +246,13 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
 
   canvas.addEventListener("pointermove", (e) => {
     const p = toPt(e);
+    const hov = inArt(e) ? displayPt(p) : null;
     const s = store.get();
-    if (!s.hover || s.hover.x !== p.x || s.hover.y !== p.y) {
-      store.set({ hover: p });
+    if (
+      (hov === null) !== (s.hover === null) ||
+      (hov && s.hover && (hov.x !== s.hover.x || hov.y !== s.hover.y))
+    ) {
+      store.set({ hover: hov });
     }
     if (!drawing) return;
     deps.getTool().onMove(p, toolCtx);

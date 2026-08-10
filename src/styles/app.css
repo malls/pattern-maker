@@ -189,7 +189,7 @@ body {
 .bezel {
   flex: 1;
   min-width: 0;
-  min-height: 560px;
+  height: 560px;
   background: var(--charcoal);
   border-radius: 9px;
   padding: 8px;
@@ -362,7 +362,7 @@ body {
 @media (max-width: 880px) {
   .panel { flex-direction: column; }
   .output { width: 100%; }
-  .bezel { min-height: 320px; }
+  .bezel { height: 320px; }
   .lcd { gap: 10px; }
   .lcd .pos { display: none; }
 }
