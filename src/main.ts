@@ -4,7 +4,9 @@ import "./styles/tokens.css";
 import "./styles/app.css";
 
 import { hexToU32 } from "./raster/buffer";
-import { clearMode, createDoc } from "./state/doc";
+import { line, rectOutline } from "./raster/raster";
+import type { Doc } from "./state/doc";
+import { CELL_SIZES, clearMode, createDoc, plotBorder, setCellSize, viewSize } from "./state/doc";
 import * as history from "./state/history";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
@@ -33,12 +35,42 @@ const MODE_TIPS: Record<string, string> = {
   tile: "draws on all nine. that's the point",
 };
 
+/** A small considered mark so the first canvas isn't scary-blank: an ink
+ *  frame, orange corner blocks, and orange edge ticks (which make the four
+ *  border-image repeat variants visibly differ right away). */
+function welcomeMark(doc: Doc): void {
+  const ink = hexToU32("#232320") ?? 0xff000000;
+  const orange = hexToU32("#FF4E00") ?? 0xff000000;
+  const L = viewSize(doc);
+  const plotInk = (x: number, y: number): void => plotBorder(doc, x, y, ink);
+  rectOutline(0, 0, L - 1, L - 1, plotInk);
+  rectOutline(2, 2, L - 3, L - 3, plotInk);
+
+  const block = (x0: number, y0: number, c: number): void => {
+    for (let y = y0; y < y0 + 3; y++) {
+      for (let x = x0; x < x0 + 3; x++) plotBorder(doc, x, y, c);
+    }
+  };
+  block(4, 4, orange);
+  block(L - 7, 4, orange);
+  block(4, L - 7, orange);
+  block(L - 7, L - 7, orange);
+
+  const m = Math.floor(L / 2) - 1;
+  const plotOrange = (x: number, y: number): void => plotBorder(doc, x, y, orange);
+  line(m, 4, m + 1, 4, plotOrange);
+  line(m, L - 5, m + 1, L - 5, plotOrange);
+  line(4, m, 4, m + 1, plotOrange);
+  line(L - 5, m, L - 5, m + 1, plotOrange);
+}
+
 function boot(): void {
   const mount = document.getElementById("app");
   if (!mount) return;
 
   const restored = loadAutosave();
   const doc = restored ? restored.doc : createDoc(DEFAULT_CELL);
+  if (!restored) welcomeMark(doc);
   const startMode = restored ? restored.mode : "border";
   const startColor = restored ? restored.colorHex : DEFAULT_COLOR;
   const hist = history.createHistories();
@@ -106,6 +138,21 @@ function boot(): void {
     history.push(hist, doc, s.mode);
     clearMode(doc, s.mode);
     bumpDoc({ tip: "cleared. fresh start" });
+  }
+
+  function stepCell(dir: -1 | 1): void {
+    const cur = doc.cellSize;
+    const next =
+      dir === 1
+        ? (CELL_SIZES.find((v) => v > cur) ?? cur)
+        : ([...CELL_SIZES].reverse().find((v) => v < cur) ?? cur);
+    if (next === cur) {
+      store.set({ tip: dir === 1 ? "that's as big as cells get" : "that's as small as cells get" });
+      return;
+    }
+    history.pushBoth(hist, doc);
+    setCellSize(doc, next);
+    bumpDoc({ cellSize: next, tip: `cell ${String(next).padStart(3, "0")}` });
   }
 
   function doSave(): void {
@@ -189,7 +236,7 @@ function boot(): void {
     handlers: {
       onTool: setTool,
       onMode: setMode,
-      onCellStep: () => {},
+      onCellStep: stepCell,
     },
   });
 
