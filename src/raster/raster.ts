@@ -46,21 +46,27 @@ export function rectOutline(x0: number, y0: number, x1: number, y1: number, plot
   }
 }
 
-/** Ellipse outline inscribed in the drag's bounding box (inclusive corners).
- *  Quarter-arc sampling mirrored 4 ways; mirrors about the (possibly
- *  half-integer) center are exact because lx+rx-x is always an integer. */
-export function ellipseOutline(x0: number, y0: number, x1: number, y1: number, plot: Plot): void {
+/** Axis-aligned filled rectangle from any two corners (inclusive). A superset
+ *  of rectOutline over the same corners, so no separate outline pass is needed;
+ *  a zero-size drag plots exactly one pixel, as the outline does. */
+export function rectFilled(x0: number, y0: number, x1: number, y1: number, plot: Plot): void {
   const lx = Math.min(x0, x1) | 0;
   const rx = Math.max(x0, x1) | 0;
   const ty = Math.min(y0, y1) | 0;
   const by = Math.max(y0, y1) | 0;
+  for (let y = ty; y <= by; y++) {
+    for (let x = lx; x <= rx; x++) plot(x, y);
+  }
+}
+
+/** Emit the ellipse-outline sample set for a bounding box. Private: the two
+ *  public ellipse primitives share it, so a filled ellipse and an outline
+ *  ellipse of the same drag have identical silhouettes by construction.
+ *  Quarter-arc sampling mirrored 4 ways; mirrors about the (possibly
+ *  half-integer) center are exact because lx+rx-x is always an integer. */
+function ellipseSamples(lx: number, ty: number, rx: number, by: number, emit: Plot): void {
   const w = rx - lx;
   const hgt = by - ty;
-  if (w === 0 || hgt === 0) {
-    line(lx, ty, rx, by, plot);
-    return;
-  }
-
   const cx = (lx + rx) / 2;
   const cy = (ty + by) / 2;
   const a = w / 2;
@@ -72,10 +78,55 @@ export function ellipseOutline(x0: number, y0: number, x1: number, y1: number, p
     const py = Math.min(by, Math.round(cy + b * Math.sin(t)));
     const mx = lx + rx - px;
     const my = ty + by - py;
-    plot(px, py);
-    plot(mx, py);
-    plot(px, my);
-    plot(mx, my);
+    emit(px, py);
+    emit(mx, py);
+    emit(px, my);
+    emit(mx, my);
+  }
+}
+
+/** Ellipse outline inscribed in the drag's bounding box (inclusive corners). */
+export function ellipseOutline(x0: number, y0: number, x1: number, y1: number, plot: Plot): void {
+  const lx = Math.min(x0, x1) | 0;
+  const rx = Math.max(x0, x1) | 0;
+  const ty = Math.min(y0, y1) | 0;
+  const by = Math.max(y0, y1) | 0;
+  if (rx === lx || by === ty) {
+    line(lx, ty, rx, by, plot);
+    return;
+  }
+  ellipseSamples(lx, ty, rx, by, plot);
+}
+
+/** Filled ellipse inscribed in the drag's bounding box. Spans run between the
+ *  extreme sampled x of each row, so the filled shape's silhouette is exactly
+ *  the outline's — by construction, not by two algorithms agreeing. */
+export function ellipseFilled(x0: number, y0: number, x1: number, y1: number, plot: Plot): void {
+  const lx = Math.min(x0, x1) | 0;
+  const rx = Math.max(x0, x1) | 0;
+  const ty = Math.min(y0, y1) | 0;
+  const by = Math.max(y0, y1) | 0;
+  if (rx === lx || by === ty) {
+    line(lx, ty, rx, by, plot);
+    return;
+  }
+  const rows = by - ty + 1;
+  const lo = new Int32Array(rows).fill(0x7fffffff);
+  const hi = new Int32Array(rows).fill(-0x80000000);
+  ellipseSamples(lx, ty, rx, by, (x, y) => {
+    const i = y - ty;
+    if (i < 0 || i >= rows) return; // defensive; the sampler stays in the box
+    const l = lo[i] ?? 0;
+    const r = hi[i] ?? 0;
+    if (x < l) lo[i] = x;
+    if (x > r) hi[i] = x;
+  });
+  for (let i = 0; i < rows; i++) {
+    const l = lo[i] ?? 0;
+    const r = hi[i] ?? -1;
+    if (r < l) continue; // a row the sampler never touched
+    const y = ty + i;
+    for (let x = l; x <= r; x++) plot(x, y);
   }
 }
 
