@@ -1,15 +1,16 @@
-/** pattern maker PM–1 — boot: build DOM, create store + doc, wire everything.
- *  Phase 2: border-mode editor live with pencil + eraser. */
+/** pattern maker PM–1 — boot: build DOM, create store + doc, wire everything. */
 
 import "./styles/tokens.css";
 import "./styles/app.css";
 
 import { hexToU32 } from "./raster/buffer";
-import { createDoc } from "./state/doc";
+import { clearMode, createDoc } from "./state/doc";
+import * as history from "./state/history";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
 import { createGridEditor } from "./editor/grid-editor";
-import { TOOLS, toolById } from "./tools/index";
+import { TOOLS, toolByHotkey, toolById } from "./tools/index";
+import type { TransportAction } from "./ui/transport";
 import { h } from "./ui/dom";
 import { createToolbar } from "./ui/toolbar";
 import { createChips } from "./ui/chips";
@@ -29,6 +30,7 @@ function boot(): void {
   if (!mount) return;
 
   const doc = createDoc(DEFAULT_CELL);
+  const hist = history.createHistories();
   const store = createStore<AppState>({
     mode: "border",
     tool: "pencil",
@@ -42,6 +44,11 @@ function boot(): void {
   });
 
   // ── actions ────────────────────────────────────────────────────────
+  function bumpDoc(patch: Partial<AppState> = {}): void {
+    const s = store.get();
+    store.set({ ...patch, dirtyDoc: s.dirtyDoc + 1, dirtyPreview: s.dirtyPreview + 1 });
+  }
+
   function setTool(id: string): void {
     const t = toolById(id);
     store.set({ tool: t.id, tip: t.tip });
@@ -51,6 +58,47 @@ function boot(): void {
     const c = hexToU32(hex);
     if (c === null) return;
     store.set({ color: c, colorHex: hex });
+  }
+
+  function doUndo(): void {
+    const s = store.get();
+    if (history.undo(hist, doc, s.mode)) {
+      bumpDoc({ cellSize: doc.cellSize, tip: "undone" });
+    } else {
+      store.set({ tip: "nothing to undo" });
+    }
+  }
+
+  function doRedo(): void {
+    const s = store.get();
+    if (history.redo(hist, doc, s.mode)) {
+      bumpDoc({ cellSize: doc.cellSize, tip: "redone" });
+    } else {
+      store.set({ tip: "nothing to redo" });
+    }
+  }
+
+  function doClear(): void {
+    const s = store.get();
+    history.push(hist, doc, s.mode);
+    clearMode(doc, s.mode);
+    bumpDoc({ tip: "cleared. fresh start" });
+  }
+
+  function onTransport(action: TransportAction): void {
+    switch (action) {
+      case "undo":
+        doUndo();
+        break;
+      case "redo":
+        doRedo();
+        break;
+      case "clear":
+        doClear();
+        break;
+      default:
+        break;
+    }
   }
 
   // ── build the device ───────────────────────────────────────────────
@@ -64,7 +112,7 @@ function boot(): void {
   });
 
   const chips = createChips(setColorHex);
-  const transport = createTransport(() => {});
+  const transport = createTransport(onTransport);
   const lcd = createLcd();
 
   const canvas = h("canvas", {
@@ -109,8 +157,31 @@ function boot(): void {
     store,
     doc,
     getTool: () => toolById(store.get().tool),
-    beginStroke: () => {},
-    commit: () => {},
+    beginStroke: () => history.push(hist, doc, store.get().mode),
+    commit: () => store.set({ dirtyPreview: store.get().dirtyPreview + 1 }),
+  });
+
+  // ── keyboard ───────────────────────────────────────────────────────
+  window.addEventListener("keydown", (e) => {
+    const target = e.target as HTMLElement | null;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+      return;
+    }
+    const key = e.key.toLowerCase();
+    if (e.ctrlKey || e.metaKey) {
+      if (key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) doRedo();
+        else doUndo();
+      } else if (key === "y") {
+        e.preventDefault();
+        doRedo();
+      }
+      return;
+    }
+    if (e.altKey) return;
+    const tool = toolByHotkey(key);
+    if (tool) setTool(tool.id);
   });
 
   // ── reflect state into the chrome ──────────────────────────────────
