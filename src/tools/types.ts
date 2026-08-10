@@ -12,6 +12,8 @@ export interface Pt {
 export interface ToolContext {
   /** logical view size L (both modes' views are L×L) */
   readonly size: number;
+  /** true when the active tool is currently in filled mode (shape tools only) */
+  readonly filled: boolean;
   /** plot the current color at a view coordinate */
   plot(x: number, y: number): void;
   /** plot transparency (0x00000000) at a view coordinate */
@@ -50,6 +52,8 @@ export interface Tool {
   /** toPt clamps to the visible window even in focused tile mode (no raw
    *  margin — a marquee beyond the window would mark what you can't see) */
   readonly clampToWindow?: true;
+  /** this tool has a filled variant: re-selecting it toggles outline/filled */
+  readonly fillable?: true;
   onDown(p: Pt, ctx: ToolContext): void;
   onMove(p: Pt, ctx: ToolContext): void;
   onUp(p: Pt, ctx: ToolContext): void;

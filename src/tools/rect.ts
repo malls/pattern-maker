@@ -1,4 +1,4 @@
-import { rectOutline } from "../raster/raster";
+import { rectFilled, rectOutline } from "../raster/raster";
 import { makeShapeTool } from "./shape";
 import type { Tool } from "./types";
 
@@ -8,4 +8,5 @@ export const rectTool: Tool = makeShapeTool(
   "rect",
   "drag corner to corner",
   rectOutline,
+  rectFilled,
 );

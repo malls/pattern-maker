@@ -223,6 +223,11 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     get size() {
       return viewSize(doc);
     },
+    /** read live, not captured: the active tool is by definition the one
+     *  drawing, so a mid-drag toggle repaints correctly on the next move */
+    get filled() {
+      return store.get().shapeFill[store.get().tool] === true;
+    },
     plot(x, y) {
       plotView(doc, store.get().mode, x, y, store.get().color);
     },
