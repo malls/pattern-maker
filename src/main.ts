@@ -94,7 +94,6 @@ function boot(): void {
     focus: null,
     hover: null,
     exportScale: 1, // session-only: a restored project never dictates it
-
     dirtyDoc: 0,
     dirtyPreview: 0,
     dirtySel: 0,
