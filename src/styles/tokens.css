@@ -1,0 +1,16 @@
+/* ── pattern maker PM–1 · brand tokens (see BRANDING.md) ────────────── */
+:root {
+  --ground:      #D3D2CD;  /* page behind the device */
+  --plastic:     #E7E6E1;  /* device body */
+  --key:         #F2F1EC;  /* key caps */
+  --key-border:  #C6C5BF;  /* key edge */
+  --key-shadow:  #B4B3AD;  /* hard key drop */
+  --charcoal:    #1B1B1A;  /* display panel, bezel, dark keys */
+  --lcd-text:    #E8E6DF;  /* light text on charcoal */
+  --ink:         #232320;  /* text, icons */
+  --label:       #8B8A85;  /* secondary labels, hairlines */
+  --orange:      #FF4E00;  /* the accent. the only one. */
+  --paper:       #FBFAF8;  /* canvas */
+  --font-sans:   "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono:   ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
