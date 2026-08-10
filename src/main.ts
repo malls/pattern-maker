@@ -38,6 +38,8 @@ import { createLcd } from "./ui/lcd";
 
 const DEFAULT_COLOR = "#232320";
 const DEFAULT_CELL = 16;
+/** the only export upscales offered — two keys, three values, no wrap */
+const EXPORT_SCALES = [1, 2, 4] as const;
 
 const MODE_TIPS: Record<string, string> = {
   border: "center stays empty. css says so",
@@ -405,6 +407,23 @@ function boot(): void {
     );
   }
 
+  /** Move through {1,2,4}. Plain store.set on purpose: the scale changes
+   *  neither the document nor the previews, so it must bump neither
+   *  dirtyDoc nor dirtyPreview — no preview regeneration, no autosave churn. */
+  function stepScale(delta: number): void {
+    const s = store.get();
+    const i = EXPORT_SCALES.indexOf(s.exportScale);
+    const j = Math.min(EXPORT_SCALES.length - 1, Math.max(0, i + delta));
+    const next = EXPORT_SCALES[j] ?? 1;
+    if (next === s.exportScale) {
+      store.set({
+        tip: delta > 0 ? "that's as big as exports get" : "that's as small as exports get",
+      });
+      return;
+    }
+    store.set({ exportScale: next, tip: `scale ${next}×` });
+  }
+
   function doSave(): void {
     const s = store.get();
     downloadProject(doc, s.mode, s.colorHex);
@@ -501,7 +520,7 @@ function boot(): void {
   });
 
   const chips = createChips(setColorHex);
-  const transport = createTransport(onTransport);
+  const transport = createTransport({ onAction: onTransport, onScaleStep: stepScale });
   const lcd = createLcd();
 
   const canvas = h("canvas", {
@@ -678,6 +697,7 @@ function boot(): void {
   function syncAll(s: AppState): void {
     toolbar.sync({ tool: s.tool, mode: s.mode, cellSize: s.cellSize, focus: s.focus !== null });
     chips.sync(s.colorHex);
+    transport.sync({ exportScale: s.exportScale });
     lcd.sync({
       tool: s.tool,
       hover: s.hover,

@@ -307,7 +307,7 @@ body {
 .custom::-moz-color-swatch { border: none; opacity: 0; }
 .custom:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 
-.transport { margin-left: auto; display: flex; gap: 8px; }
+.transport { margin-left: auto; display: flex; gap: 8px; align-items: end; }
 .t-key {
   display: grid;
   justify-items: center;
@@ -342,6 +342,16 @@ body {
   color: #fff;
 }
 .t-key.primary:hover .cap { background: #FF5E14; }
+
+/* export-scale stepper: the cell stepper's parts, labelled like a transport key */
+.t-group { display: grid; justify-items: center; gap: 3px; }
+.t-group > span {
+  font: 9px var(--font-mono);
+  letter-spacing: .09em;
+  color: var(--label);
+}
+.t-scale .key { width: 26px; height: 34px; }     /* cap height matches .t-key .cap */
+.t-scale .readout { width: 34px; padding: 10px 6px; }
 
 /* ── lcd status strip ───────────────────────────────────────────────── */
 .lcd {
