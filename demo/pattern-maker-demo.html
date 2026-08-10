@@ -7,7 +7,7 @@
     --key:         #F2F1EC;  /* key caps */
     --key-border:  #C6C5BF;  /* key edge */
     --key-shadow:  #B4B3AD;  /* hard key drop */
-    --charcoal:    #1B1B1A;  /* display panel, bezel, dark keys */
+    --charcoal:    #1B1B1A;  /* display panel, dark keys */
     --lcd-text:    #E8E6DF;  /* light text on charcoal */
     --ink:         #232320;  /* text, icons */
     --label:       #8B8A85;  /* secondary labels, hairlines */
@@ -190,10 +190,11 @@
   .bezel {
     flex: 1;
     min-width: 0;
-    background: var(--charcoal);
+    background: var(--ground);
+    border: 1px solid var(--key-border);
     border-radius: 9px;
     padding: 8px;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,.6);
+    box-shadow: inset 0 1px 3px rgba(35,35,32,.18);
     display: grid;
   }
   #canvas {

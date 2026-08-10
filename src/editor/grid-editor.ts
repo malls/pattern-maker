@@ -4,7 +4,7 @@
  *
  *  Sizing model: the canvas always fills the bezel's inner box (a fixed
  *  footprint set in CSS); the art is drawn centered inside it at the largest
- *  integer device-pixel zoom that fits, letterboxed on the charcoal. Changing
+ *  integer device-pixel zoom that fits, letterboxed on the light well. Changing
  *  cell size changes resolution only, never the editor's on-screen size. */
 
 import type { PixelBuffer } from "../raster/buffer";
@@ -135,7 +135,7 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
       }
     }
 
-    // display: clear the full canvas (letterbox shows the charcoal bezel),
+    // display: clear the full canvas (letterbox shows the light-well bezel),
     // then checker under the art, the art window, then chrome — all inside
     // the art rect.
     ctx.clearRect(0, 0, devW, devH);

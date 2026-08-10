@@ -47,14 +47,14 @@ Warm-biased grays for the body, charcoal for anything that displays information,
 
 | Token | Hex | Use |
 |---|---|---|
-| `--charcoal` | `#1B1B1A` | LCD strip, canvas bezel, active tool keys, badge |
+| `--charcoal` | `#1B1B1A` | LCD strip, active tool keys, badge |
 | `--lcd-text` | `#E8E6DF` | Light text on charcoal |
 | `--orange` | `#FF4E00` | **The accent.** LEDs, active states, primary action, focus rings, live values |
 
 **Rules of engagement**
 
 - Orange marks *state and action*, never decoration: a lit LED, an active toggle, the export key, the current value on the LCD, a focus ring. If orange appears somewhere nothing is happening, remove it.
-- Charcoal surfaces are where information lives (readouts, the canvas bezel, active keys). Plastic surfaces are where hands go. Keep the two roles distinct.
+- Charcoal surfaces are where information lives (readouts, active keys). Plastic surfaces are where hands go. Keep the two roles distinct — the canvas sits in a light well, not on charcoal.
 - No gradients on any surface. The only permitted "lighting" is the device's inset top highlight, the key drop shadow, and the LED glow (`0 0 5px rgba(255,78,0,.9)`). Two functional exceptions: the corner screws' machined shading and the custom-color well's spectrum ring — both tiny, both earn it.
 - Text is ink-on-plastic or lcd-text-on-charcoal. Never set text in orange except single live values on the LCD.
 
@@ -93,7 +93,7 @@ The component vocabulary is hardware. Draw it all in CSS — flat fills, 1px bor
 - **Active tool key:** cap turns `--charcoal`, icon turns `--orange`, and the key's 4px LED dot lights with a soft orange glow. Inactive LEDs stay `--key-border` gray — visible but dark, like real hardware.
 - **Toggle banks** (symmetry): active segment fills solid orange with white text.
 - **Color chips:** circles, 19px, hairline border; selection is a 2px orange ring offset 2px. The current-color well is a larger chip.
-- **The canvas bezel:** charcoal, 8px padding, inner shadow — the canvas is the device's screen.
+- **The canvas bezel:** a light well — `--ground` fill, hairline `--key-border` edge, 8px padding, soft inner shadow — so black ink at the art's edge never merges with the surround. Charcoal is reserved for information surfaces (LCD, badge, active keys).
 - **The LCD strip:** charcoal bar, mono type, dim gray field labels (`tool`, `x`, `y`, `sym`) with values in lcd-text; live/changed values in orange; a blinking orange block cursor closes the tip line (disabled under `prefers-reduced-motion`).
 - **Corner screws** on the device body are the single permitted hardware flourish. Do not add speaker grilles, fake ports, or woodgrain.
 - Focus-visible state everywhere: `2px solid var(--orange)`, offset 2px.

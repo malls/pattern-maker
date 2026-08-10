@@ -66,8 +66,8 @@ export function drawCenterLock(
 }
 
 /** Focused-view mini-map: a small 3×3 glyph in the bottom-right letterbox
- *  corner showing which cell is focused. Hairline squares on the charcoal,
- *  the focused cell filled orange, border-mode center dimmed hollow. Drawn
+ *  corner showing which cell is focused. Ink hairline squares on the light
+ *  well, the focused cell filled orange, border-mode center dimmed hollow. Drawn
  *  in raw canvas device px (outside the art-rect translate); skipped when
  *  the letterbox is too tight — the LED + LCD carry the state. */
 export function drawFocusMinimap(
@@ -102,7 +102,7 @@ export function drawFocusMinimap(
         ctx.fillRect(x, y, cell, cell);
       } else {
         const center = mode === "border" && gx === 1 && gy === 1;
-        ctx.strokeStyle = center ? "rgba(242,241,236,.15)" : "rgba(242,241,236,.35)";
+        ctx.strokeStyle = center ? "rgba(35,35,32,.18)" : "rgba(35,35,32,.45)";
         ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
       }
     }
