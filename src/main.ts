@@ -475,8 +475,9 @@ function boot(): void {
 
   function doExportPng(): void {
     const s = store.get();
-    downloadPNG(activeBuffer(doc, s.mode));
-    store.set({ tip: "pattern.png" });
+    const scale = s.exportScale;
+    downloadPNG(activeBuffer(doc, s.mode), scale);
+    store.set({ tip: scale === 1 ? "pattern.png" : `pattern.png ${scale}×` });
   }
 
   function onTransport(action: TransportAction): void {
