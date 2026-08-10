@@ -9,6 +9,8 @@ import * as history from "./state/history";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
 import { activeBuffer } from "./state/doc";
+import type { DecodedProject } from "./state/persist";
+import { autosave, downloadProject, loadAutosave, pickAndImportProject } from "./state/persist";
 import { createGridEditor } from "./editor/grid-editor";
 import { bufferToDataURI, debounce } from "./preview/compose";
 import { createBorderPreview } from "./preview/border-preview";
@@ -35,18 +37,21 @@ function boot(): void {
   const mount = document.getElementById("app");
   if (!mount) return;
 
-  const doc = createDoc(DEFAULT_CELL);
+  const restored = loadAutosave();
+  const doc = restored ? restored.doc : createDoc(DEFAULT_CELL);
+  const startMode = restored ? restored.mode : "border";
+  const startColor = restored ? restored.colorHex : DEFAULT_COLOR;
   const hist = history.createHistories();
   const store = createStore<AppState>({
-    mode: "border",
+    mode: startMode,
     tool: "pencil",
-    color: hexToU32(DEFAULT_COLOR) ?? 0xff000000,
-    colorHex: DEFAULT_COLOR,
-    cellSize: DEFAULT_CELL,
+    color: hexToU32(startColor) ?? 0xff000000,
+    colorHex: startColor,
+    cellSize: doc.cellSize,
     hover: null,
     dirtyDoc: 0,
     dirtyPreview: 0,
-    tip: MODE_TIPS["border"] ?? "",
+    tip: restored ? "picked up where you left off" : (MODE_TIPS[startMode] ?? ""),
   });
 
   // ── actions ────────────────────────────────────────────────────────
@@ -103,6 +108,38 @@ function boot(): void {
     bumpDoc({ tip: "cleared. fresh start" });
   }
 
+  function doSave(): void {
+    const s = store.get();
+    downloadProject(doc, s.mode, s.colorHex);
+    store.set({ tip: "pattern.json" });
+  }
+
+  function applyProject(p: DecodedProject): void {
+    // make loading undoable in both modes, then swap the doc contents in place
+    history.pushBoth(hist, doc);
+    doc.cellSize = p.doc.cellSize;
+    doc.border = p.doc.border;
+    doc.tile = p.doc.tile;
+    bumpDoc({
+      mode: p.mode,
+      cellSize: doc.cellSize,
+      color: hexToU32(p.colorHex) ?? store.get().color,
+      colorHex: p.colorHex,
+      hover: null,
+      tip: "project loaded",
+    });
+  }
+
+  function doLoad(): void {
+    pickAndImportProject((p) => {
+      if (!p) {
+        store.set({ tip: "couldn't read that file" });
+        return;
+      }
+      applyProject(p);
+    });
+  }
+
   function doCopyCss(): void {
     const s = store.get();
     const uri = bufferToDataURI(activeBuffer(doc, s.mode));
@@ -128,6 +165,12 @@ function boot(): void {
         break;
       case "clear":
         doClear();
+        break;
+      case "save":
+        doSave();
+        break;
+      case "load":
+        doLoad();
         break;
       case "css":
         doCopyCss();
@@ -258,6 +301,22 @@ function boot(): void {
     }
   });
   refreshPreviews();
+
+  // ── autosave (~500 ms after changes settle) ────────────────────────
+  const debouncedAutosave = debounce(500, () => {
+    const s = store.get();
+    autosave(doc, s.mode, s.colorHex);
+  });
+  store.subscribe((s, prev) => {
+    if (
+      s.dirtyDoc !== prev.dirtyDoc ||
+      s.dirtyPreview !== prev.dirtyPreview ||
+      s.mode !== prev.mode ||
+      s.colorHex !== prev.colorHex
+    ) {
+      debouncedAutosave();
+    }
+  });
 
   // ── reflect state into the chrome ──────────────────────────────────
   function syncAll(s: AppState): void {
