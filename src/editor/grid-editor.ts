@@ -197,8 +197,11 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     if (marked) {
       ctx.save();
       ctx.translate(ox, oy);
+      // clip to the art rect so a rect outside the focused window can't paint
+      // the letterbox — inflated by the one device px the ants sit outside the
+      // marked pixels, so an edge-to-edge selection still shows its hairline
       ctx.beginPath();
-      ctx.rect(0, 0, Lf * z, Lf * z);
+      ctx.rect(-1, -1, Lf * z + 2, Lf * z + 2);
       ctx.clip();
       drawMarquee(ctx, marked.x - fx0, marked.y - fy0, marked.w, marked.h, z);
       ctx.restore();
