@@ -227,12 +227,15 @@ body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+  min-width: 0;              /* defensive: never force the column to overflow */
 }
 .bp-item {
   display: grid;
   gap: 5px;
   justify-items: center;
 }
+.bp-item-wide { grid-column: 1 / -1; }   /* the repeat 2× study spans the row */
+/* the 2× box overrides width/height inline — see border-preview.ts */
 .bp-box {
   width: 158px;
   height: 158px;
