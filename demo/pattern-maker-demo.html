@@ -1,0 +1,716 @@
+<title>pattern maker PM–1</title>
+<style>
+  /* ── pattern maker PM–1 · brand tokens (see BRANDING.md) ────────────── */
+  :root {
+    --ground:      #D3D2CD;  /* page behind the device */
+    --plastic:     #E7E6E1;  /* device body */
+    --key:         #F2F1EC;  /* key caps */
+    --key-border:  #C6C5BF;  /* key edge */
+    --key-shadow:  #B4B3AD;  /* hard key drop */
+    --charcoal:    #1B1B1A;  /* display panel, bezel, dark keys */
+    --lcd-text:    #E8E6DF;  /* light text on charcoal */
+    --ink:         #232320;  /* text, icons */
+    --label:       #8B8A85;  /* secondary labels, hairlines */
+    --orange:      #FF4E00;  /* the accent. the only one. */
+    --paper:       #FBFAF8;  /* canvas */
+    --font-sans:   "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono:   ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { height: 100%; }
+  body {
+    min-height: 100%;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--ground);
+    background-image: radial-gradient(rgba(35,35,32,.13) 1px, transparent 1px);
+    background-size: 22px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+  }
+
+  /* ── the device ─────────────────────────────────────────────────────── */
+  .device {
+    position: relative;
+    width: min(1060px, 100%);
+    background: var(--plastic);
+    border: 1px solid #C0BFBA;
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.75),
+                inset 0 -2px 0 rgba(35,35,32,.08),
+                0 18px 50px rgba(35,35,32,.30);
+    padding: 16px 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .screw {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #DEDDD8, #A6A5A0);
+    border: 1px solid #96958F;
+  }
+  .screw::after {
+    content: "";
+    position: absolute;
+    left: 1px; right: 1px; top: 50%;
+    height: 1px;
+    background: rgba(35,35,32,.55);
+    transform: rotate(45deg);
+  }
+  .screw.tl { top: 7px; left: 7px; }
+  .screw.tr { top: 7px; right: 7px; }
+  .screw.bl { bottom: 7px; left: 7px; }
+  .screw.br { bottom: 7px; right: 7px; }
+
+  /* ── masthead ───────────────────────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 0 4px;
+    user-select: none;
+  }
+  .wordmark {
+    font: 500 16px/1 var(--font-sans);
+    letter-spacing: -.01em;
+  }
+  .model {
+    font: 11px var(--font-mono);
+    color: var(--lcd-text);
+    background: var(--charcoal);
+    padding: 3px 7px;
+    border-radius: 4px;
+    transform: translateY(-1px);
+  }
+  .tagline {
+    margin-left: auto;
+    font: 10px var(--font-mono);
+    color: var(--label);
+    letter-spacing: .04em;
+  }
+  .power {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--orange);
+    box-shadow: 0 0 5px rgba(255,78,0,.9);
+    transform: translateY(1px);
+    flex: none;
+  }
+
+  /* ── panel layout ───────────────────────────────────────────────────── */
+  .panel {
+    display: flex;
+    gap: 14px;
+    min-height: 0;
+  }
+
+  .rail {
+    display: grid;
+    grid-template-columns: repeat(2, 46px);
+    gap: 6px;
+    align-content: start;
+    flex: none;
+  }
+  .rail-label {
+    grid-column: 1 / -1;
+    font: 9px var(--font-mono);
+    letter-spacing: .09em;
+    color: var(--label);
+    padding: 8px 2px 0;
+    user-select: none;
+  }
+  .rail-label:first-child { padding-top: 2px; }
+
+  /* ── key caps ───────────────────────────────────────────────────────── */
+  .key {
+    position: relative;
+    height: 42px;
+    background: var(--key);
+    border: 1px solid var(--key-border);
+    border-radius: 5px;
+    box-shadow: 0 2px 0 var(--key-shadow);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 0;
+  }
+  .key:hover { background: #F7F6F1; }
+  .key:active { transform: translateY(2px); box-shadow: none; }
+  .key:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .key svg { width: 21px; height: 21px; display: block; }
+
+  .tool .led {
+    position: absolute;
+    top: 5px; right: 5px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--key-border);
+  }
+  .tool[aria-pressed="true"] {
+    background: var(--charcoal);
+    border-color: var(--charcoal);
+    color: var(--orange);
+  }
+  .tool[aria-pressed="true"] .led {
+    background: var(--orange);
+    box-shadow: 0 0 5px rgba(255,78,0,.9);
+  }
+
+  .sizes { grid-column: 1 / -1; display: flex; gap: 6px; }
+  .size { flex: 1; height: 30px; }
+  .size i { display: block; border-radius: 50%; background: currentColor; }
+  .size[aria-pressed="true"] {
+    background: var(--charcoal);
+    border-color: var(--charcoal);
+    color: var(--orange);
+  }
+
+  .sym { grid-column: 1 / -1; display: flex; gap: 6px; }
+  .sym .key {
+    flex: 1; height: 26px;
+    font: 10px var(--font-mono);
+    color: var(--ink);
+  }
+  .sym .key[aria-pressed="true"] {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #fff;
+  }
+
+  /* ── canvas bezel ───────────────────────────────────────────────────── */
+  .bezel {
+    flex: 1;
+    min-width: 0;
+    background: var(--charcoal);
+    border-radius: 9px;
+    padding: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.6);
+    display: grid;
+  }
+  #canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--paper);
+    border-radius: 3px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* ── lower deck: chips + transport ──────────────────────────────────── */
+  .deck {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 0 4px;
+  }
+  .deck-label {
+    font: 9px var(--font-mono);
+    letter-spacing: .09em;
+    color: var(--label);
+    user-select: none;
+  }
+  .current {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1px solid rgba(35,35,32,.35);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,.35), 0 1px 0 rgba(255,255,255,.6);
+    flex: none;
+  }
+  .chips {
+    display: grid;
+    grid-template-columns: repeat(8, 19px);
+    grid-auto-rows: 19px;
+    gap: 6px;
+  }
+  .chip {
+    border-radius: 50%;
+    border: 1px solid rgba(35,35,32,.30);
+    cursor: pointer;
+    padding: 0;
+  }
+  .chip[aria-pressed="true"] { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .chip:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .custom {
+    width: 19px; height: 19px;
+    padding: 0;
+    border: 1px solid rgba(35,35,32,.30);
+    border-radius: 50%;
+    background: conic-gradient(#FF4E00, #F2B500, #3E9B4F, #2E5FD2, #C43E8F, #FF4E00);
+    cursor: pointer;
+  }
+  .custom::-webkit-color-swatch-wrapper { padding: 0; opacity: 0; }
+  .custom::-webkit-color-swatch { border: none; opacity: 0; }
+  .custom::-moz-color-swatch { border: none; opacity: 0; }
+  .custom:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+  .transport { margin-left: auto; display: flex; gap: 8px; }
+  .t-key {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+    background: none; border: none; padding: 0;
+    cursor: pointer;
+  }
+  .t-key .cap {
+    position: relative;
+    width: 52px; height: 34px;
+    background: var(--key);
+    border: 1px solid var(--key-border);
+    border-radius: 5px;
+    box-shadow: 0 2px 0 var(--key-shadow);
+    display: grid;
+    place-items: center;
+    font: 15px var(--font-mono);
+    color: var(--ink);
+  }
+  .t-key:hover .cap { background: #F7F6F1; }
+  .t-key:active .cap { transform: translateY(2px); box-shadow: none; }
+  .t-key:focus-visible .cap { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .t-key span {
+    font: 9px var(--font-mono);
+    letter-spacing: .09em;
+    color: var(--label);
+  }
+  .t-key.primary .cap {
+    background: var(--orange);
+    border-color: #E04500;
+    box-shadow: 0 2px 0 #C23C00;
+    color: #fff;
+  }
+  .t-key.primary:hover .cap { background: #FF5E14; }
+
+  /* ── lcd status strip ───────────────────────────────────────────────── */
+  .lcd {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--charcoal);
+    border-radius: 7px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.6);
+    padding: 8px 14px;
+    font: 11px var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--lcd-text);
+    user-select: none;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .lcd b { font-weight: normal; color: var(--orange); }
+  .lcd .dim { color: #7A7974; }
+  .lcd .grow { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .cursor {
+    display: inline-block;
+    width: 6px; height: 11px;
+    background: var(--orange);
+    vertical-align: -1px;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  @media (max-width: 720px) {
+    .panel { flex-direction: column; }
+    .rail { grid-template-columns: repeat(auto-fill, 46px); width: 100%; }
+    .rail-label, .sizes, .sym { grid-column: 1 / -1; }
+    .lcd { gap: 10px; }
+    .lcd .pos { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+    .key:active, .t-key:active .cap { transform: none; }
+  }
+</style>
+
+<div class="device" role="application" aria-label="pattern maker PM–1">
+  <div class="screw tl" aria-hidden="true"></div>
+  <div class="screw tr" aria-hidden="true"></div>
+  <div class="screw bl" aria-hidden="true"></div>
+  <div class="screw br" aria-hidden="true"></div>
+
+  <header class="masthead">
+    <span class="wordmark">pattern maker</span>
+    <span class="model" id="model">PM–1</span>
+    <span class="tagline">professional pattern instrument</span>
+    <span class="power" title="on" aria-hidden="true"></span>
+  </header>
+
+  <div class="panel">
+    <div class="rail" role="toolbar" aria-label="tools">
+      <span class="rail-label">tools</span>
+      <button class="key tool" data-tool="pencil" aria-pressed="true" title="pencil (p)" aria-label="pencil">
+        <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 18l1-4L15 4l3 3L8 17l-4 1z"/><path d="M13 6l3 3"/></svg><i class="led"></i>
+      </button>
+      <button class="key tool" data-tool="brush" title="brush (b)" aria-label="brush">
+        <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 4c-4 1-8 5-9 8l3 3c3-1 7-5 8-9z"/><path d="M9 12c-2 1-3 3-3 6 3 0 5-1 6-3"/></svg><i class="led"></i>
+      </button>
+      <button class="key tool" data-tool="spray" title="spray (s)" aria-label="spray">
+        <svg viewBox="0 0 22 22" fill="currentColor"><circle cx="6" cy="6" r="1.1"/><circle cx="11" cy="4" r="1.1"/><circle cx="16" cy="6" r="1.1"/><circle cx="4" cy="11" r="1.1"/><circle cx="9" cy="10" r="1.1"/><circle cx="14" cy="11" r="1.1"/><circle cx="18" cy="10" r="1.1"/><circle cx="6" cy="16" r="1.1"/><circle cx="11" cy="15" r="1.1"/><circle cx="16" cy="16" r="1.1"/></svg><i class="led"></i>
+      </button>
+      <button class="key tool" data-tool="eraser" title="eraser (e)" aria-label="eraser">
+        <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 17l-4-4 8-8 5 5-7 7H8z"/><path d="M4 17h14" stroke-linecap="round"/></svg><i class="led"></i>
+      </button>
+      <button class="key tool" data-tool="line" title="line (l)" aria-label="line">
+        <svg viewBox="0 0 22 22" stroke="currentColor" stroke-width="1.8"><path d="M4 18L18 4"/></svg><i class="led"></i>
+      </button>
+      <button class="key tool" data-tool="rect" title="rectangle (r)" aria-label="rectangle">
+        <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="6" width="14" height="10"/></svg><i class="led"></i>
+      </button>
+      <button class="key tool" data-tool="ellipse" title="ellipse (o)" aria-label="ellipse">
+        <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="11" cy="11" rx="7" ry="5"/></svg><i class="led"></i>
+      </button>
+      <button class="key tool" data-tool="fill" title="fill (f)" aria-label="fill">
+        <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 3l7 7-6 6a2.5 2.5 0 01-3.6 0L5 12.6a2.5 2.5 0 010-3.6L11 3z"/><path d="M18 14c1 1.4 1.6 2.4 1.6 3.2a1.6 1.6 0 11-3.2 0c0-.8.6-1.8 1.6-3.2z" fill="currentColor"/></svg><i class="led"></i>
+      </button>
+
+      <span class="rail-label">size</span>
+      <div class="sizes">
+        <button class="key size" data-size="2" title="fine" aria-label="fine tip"><i style="width:3px;height:3px"></i></button>
+        <button class="key size" data-size="5" aria-pressed="true" title="medium" aria-label="medium tip"><i style="width:6px;height:6px"></i></button>
+        <button class="key size" data-size="10" title="broad" aria-label="broad tip"><i style="width:10px;height:10px"></i></button>
+        <button class="key size" data-size="18" title="fat" aria-label="fat tip"><i style="width:15px;height:15px"></i></button>
+      </div>
+
+      <span class="rail-label">sym</span>
+      <div class="sym">
+        <button class="key" data-sym="1" aria-pressed="true" title="no symmetry">off</button>
+        <button class="key" data-sym="2" title="2-way symmetry">2</button>
+        <button class="key" data-sym="4" title="4-way symmetry">4</button>
+        <button class="key" data-sym="8" title="8-way mandala">8</button>
+      </div>
+    </div>
+
+    <div class="bezel">
+      <canvas id="canvas" width="880" height="560" aria-label="drawing canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="deck">
+    <span class="deck-label">color</span>
+    <div class="current" id="current-chip" style="background:#232320" title="current color"></div>
+    <div class="chips" role="group" aria-label="color chips"></div>
+    <input class="custom" type="color" id="custom-color" value="#FF4E00" title="custom color" aria-label="custom color">
+    <div class="transport">
+      <button class="t-key" id="btn-undo" title="undo (ctrl+z)"><span class="cap">↺</span><span>undo</span></button>
+      <button class="t-key" id="btn-clear" title="clear canvas"><span class="cap">×</span><span>clear</span></button>
+      <button class="t-key primary" id="btn-export" title="export png"><span class="cap">↓</span><span>export</span></button>
+    </div>
+  </div>
+
+  <div class="lcd">
+    <span><span class="dim">tool</span> <b id="st-tool">pencil</b></span>
+    <span class="pos"><span class="dim">x</span> <span id="st-x">—</span> <span class="dim">y</span> <span id="st-y">—</span></span>
+    <span><span class="dim">sym</span> <b id="st-sym">off</b></span>
+    <span class="grow"><span id="st-tip">turn on sym 8 and just scribble</span> <i class="cursor" aria-hidden="true"></i></span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const cv = document.getElementById('canvas');
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  const W = cv.width, H = cv.height, CX = W / 2, CY = H / 2;
+
+  const PAPER = '#FBFAF8';
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const state = {
+    tool: 'pencil',
+    color: '#232320',
+    size: 5,
+    sym: 1,
+    drawing: false,
+    start: null,
+    prev: null,
+    snapshot: null,   // for shape preview
+    undo: [],
+  };
+
+  // ── chips ────────────────────────────────────────────────────────────
+  const CHIPS = [
+    '#232320', '#575651', '#8B8A85', '#C6C5BF',
+    '#FBFAF8', '#EFE6D0', '#8A5A3B', '#FF4E00',
+    '#D22E2E', '#F2B500', '#3E9B4F', '#2E8B8B',
+    '#2E5FD2', '#7B4FD2', '#C43E8F', '#F2A0B8',
+  ];
+  const chipWrap = document.querySelector('.chips');
+  CHIPS.forEach((hex, i) => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.style.background = hex;
+    b.title = hex.toLowerCase();
+    b.setAttribute('aria-label', 'color ' + hex);
+    b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    b.addEventListener('click', () => setColor(hex, b));
+    chipWrap.appendChild(b);
+  });
+  function setColor(hex, btn) {
+    state.color = hex;
+    document.getElementById('current-chip').style.background = hex;
+    chipWrap.querySelectorAll('.chip').forEach(c =>
+      c.setAttribute('aria-pressed', c === btn ? 'true' : 'false'));
+  }
+  document.getElementById('custom-color').addEventListener('input', e => setColor(e.target.value, null));
+
+  // ── tool / size / symmetry pickers ───────────────────────────────────
+  const TIPS = {
+    pencil:  'hard line. honest pixels',
+    brush:   'wider and softer. fill shapes by hand',
+    spray:   'hold still for density',
+    eraser:  'back to paper. no shame in it',
+    line:    'drag to place a straight line',
+    rect:    'drag corner to corner',
+    ellipse: 'drag corner to corner. circle-ish comes free',
+    fill:    'click a region to flood it',
+  };
+  document.querySelectorAll('.tool').forEach(b => {
+    b.addEventListener('click', () => {
+      state.tool = b.dataset.tool;
+      document.querySelectorAll('.tool').forEach(t =>
+        t.setAttribute('aria-pressed', t === b ? 'true' : 'false'));
+      document.getElementById('st-tool').textContent = state.tool;
+      document.getElementById('st-tip').textContent = TIPS[state.tool];
+    });
+  });
+  document.querySelectorAll('.size').forEach(b => {
+    b.addEventListener('click', () => {
+      state.size = +b.dataset.size;
+      document.querySelectorAll('.size').forEach(s =>
+        s.setAttribute('aria-pressed', s === b ? 'true' : 'false'));
+    });
+  });
+  document.querySelectorAll('.sym .key').forEach(b => {
+    b.addEventListener('click', () => {
+      state.sym = +b.dataset.sym;
+      document.querySelectorAll('.sym .key').forEach(s =>
+        s.setAttribute('aria-pressed', s === b ? 'true' : 'false'));
+      document.getElementById('st-sym').textContent =
+        state.sym === 1 ? 'off' : String(state.sym);
+    });
+  });
+
+  // ── symmetry transforms ──────────────────────────────────────────────
+  // Returns a list of [a,b,c,d,e,f] canvas transforms about the center.
+  function symTransforms() {
+    const list = [];
+    const rotations = state.sym === 8 ? 4 : state.sym;
+    const mirror = state.sym === 8;
+    for (let k = 0; k < rotations; k++) {
+      const a = (2 * Math.PI * k) / rotations;
+      const cos = Math.cos(a), sin = Math.sin(a);
+      list.push([cos, sin, -sin, cos, CX - cos * CX + sin * CY, CY - sin * CX - cos * CY]);
+      if (mirror) {
+        list.push([-cos, sin, sin, cos, CX + cos * CX - sin * CY, CY - sin * CX - cos * CY]);
+      }
+    }
+    return list;
+  }
+  function eachSym(fn) {
+    for (const t of symTransforms()) {
+      ctx.save();
+      ctx.setTransform(t[0], t[1], t[2], t[3], t[4], t[5]);
+      fn();
+      ctx.restore();
+    }
+  }
+
+  // ── drawing primitives ───────────────────────────────────────────────
+  function strokeStyle() {
+    ctx.strokeStyle = state.tool === 'eraser' ? PAPER : state.color;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.lineWidth = state.tool === 'brush' ? state.size * 1.8
+                  : state.tool === 'eraser' ? state.size * 2.2
+                  : state.size;
+  }
+  function segment(x0, y0, x1, y1) {
+    strokeStyle();
+    eachSym(() => {
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    });
+  }
+  function spray(x, y) {
+    strokeStyle();
+    const r = state.size * 2.4;
+    eachSym(() => {
+      for (let i = 0; i < 24; i++) {
+        const a = Math.random() * 2 * Math.PI;
+        const d = Math.sqrt(Math.random()) * r;
+        ctx.fillRect(x + Math.cos(a) * d, y + Math.sin(a) * d, 1.4, 1.4);
+      }
+    });
+  }
+  function shape(x0, y0, x1, y1) {
+    strokeStyle();
+    eachSym(() => {
+      ctx.beginPath();
+      if (state.tool === 'line') {
+        ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+      } else if (state.tool === 'rect') {
+        ctx.rect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
+      } else {
+        ctx.ellipse((x0 + x1) / 2, (y0 + y1) / 2,
+                    Math.abs(x1 - x0) / 2 || .5, Math.abs(y1 - y0) / 2 || .5, 0, 0, 2 * Math.PI);
+      }
+      ctx.stroke();
+    });
+  }
+
+  // ── flood fill ───────────────────────────────────────────────────────
+  function hexToRGBA(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255];
+  }
+  function floodAt(sx, sy, target) {
+    sx = Math.round(sx); sy = Math.round(sy);
+    if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
+    const img = ctx.getImageData(0, 0, W, H);
+    const d = img.data;
+    const idx = (x, y) => (y * W + x) * 4;
+    const i0 = idx(sx, sy);
+    const t = [d[i0], d[i0+1], d[i0+2], d[i0+3]];
+    if (t[0] === target[0] && t[1] === target[1] && t[2] === target[2]) return;
+    const match = i => d[i] === t[0] && d[i+1] === t[1] && d[i+2] === t[2];
+    const stack = [[sx, sy]];
+    while (stack.length) {
+      const [x, y] = stack.pop();
+      let x0 = x;
+      while (x0 >= 0 && match(idx(x0, y))) x0--;
+      x0++;
+      let up = false, down = false;
+      let x1 = x0;
+      while (x1 < W && match(idx(x1, y))) {
+        const i = idx(x1, y);
+        d[i] = target[0]; d[i+1] = target[1]; d[i+2] = target[2]; d[i+3] = 255;
+        if (y > 0)     { const m = match(idx(x1, y - 1)); if (m && !up)   { stack.push([x1, y - 1]); up = true; }   if (!m) up = false; }
+        if (y < H - 1) { const m = match(idx(x1, y + 1)); if (m && !down) { stack.push([x1, y + 1]); down = true; } if (!m) down = false; }
+        x1++;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  function fill(x, y) {
+    const target = hexToRGBA(state.color);
+    // fill at every symmetric image of the click point
+    const pts = symTransforms().map(t => [t[0]*x + t[2]*y + t[4], t[1]*x + t[3]*y + t[5]]);
+    for (const [px, py] of pts) floodAt(px, py, target);
+  }
+
+  // ── undo ─────────────────────────────────────────────────────────────
+  function pushUndo() {
+    state.undo.push(ctx.getImageData(0, 0, W, H));
+    if (state.undo.length > 30) state.undo.shift();
+  }
+  function undo() {
+    const img = state.undo.pop();
+    if (img) ctx.putImageData(img, 0, 0);
+  }
+
+  // ── pointer plumbing ─────────────────────────────────────────────────
+  function pos(e) {
+    const r = cv.getBoundingClientRect();
+    return [ (e.clientX - r.left) * (W / r.width),
+             (e.clientY - r.top)  * (H / r.height) ];
+  }
+  const isShape = () => ['line', 'rect', 'ellipse'].includes(state.tool);
+
+  cv.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    cv.setPointerCapture(e.pointerId);
+    const [x, y] = pos(e);
+    pushUndo();
+    state.drawing = true;
+    state.start = [x, y];
+    state.prev = [x, y];
+    if (state.tool === 'fill') { fill(x, y); state.drawing = false; return; }
+    if (isShape()) { state.snapshot = ctx.getImageData(0, 0, W, H); return; }
+    if (state.tool === 'spray') { spray(x, y); return; }
+    segment(x, y, x + .01, y + .01);   // dot on click
+  });
+
+  cv.addEventListener('pointermove', e => {
+    const [x, y] = pos(e);
+    document.getElementById('st-x').textContent = String(Math.round(x)).padStart(3, '0');
+    document.getElementById('st-y').textContent = String(Math.round(y)).padStart(3, '0');
+    if (!state.drawing) return;
+    if (isShape()) {
+      ctx.putImageData(state.snapshot, 0, 0);
+      shape(state.start[0], state.start[1], x, y);
+    } else if (state.tool === 'spray') {
+      spray(x, y);
+    } else {
+      segment(state.prev[0], state.prev[1], x, y);
+      state.prev = [x, y];
+    }
+  });
+
+  function up() {
+    state.drawing = false;
+    state.snapshot = null;
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', up);
+
+  // ── transport ────────────────────────────────────────────────────────
+  function clearAll() {
+    pushUndo();
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(0, 0, W, H);
+  }
+  function exportPNG() {
+    const a = document.createElement('a');
+    a.download = 'pattern.png';
+    a.href = cv.toDataURL('image/png');
+    a.click();
+  }
+  document.getElementById('btn-undo').addEventListener('click', undo);
+  document.getElementById('btn-clear').addEventListener('click', clearAll);
+  document.getElementById('btn-export').addEventListener('click', exportPNG);
+  document.getElementById('model').addEventListener('click', () => {
+    document.getElementById('st-tip').textContent =
+      'pattern maker PM–1 · demo build · draw quiet, save often';
+  });
+
+  // ── keyboard ─────────────────────────────────────────────────────────
+  const KEYS = { p:'pencil', b:'brush', s:'spray', e:'eraser', l:'line', r:'rect', o:'ellipse', f:'fill' };
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+    const tool = KEYS[e.key.toLowerCase()];
+    if (tool) document.querySelector('.tool[data-tool="' + tool + '"]').click();
+  });
+
+  // ── a little welcome mark so the canvas isn't scary-blank ────────────
+  (function hello() {
+    state.sym = 8;
+    ctx.strokeStyle = '#FF4E00'; ctx.lineWidth = 3;
+    eachSym(() => {
+      ctx.beginPath();
+      ctx.moveTo(CX + 40, CY - 10);
+      ctx.quadraticCurveTo(CX + 110, CY - 70, CX + 170, CY - 20);
+      ctx.stroke();
+    });
+    ctx.strokeStyle = '#232320'; ctx.lineWidth = 2;
+    eachSym(() => {
+      ctx.beginPath();
+      ctx.arc(CX + 120, CY - 40, 9, 0, 2 * Math.PI);
+      ctx.stroke();
+    });
+    state.sym = 1;
+  })();
+})();
+</script>

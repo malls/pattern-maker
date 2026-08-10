@@ -1,0 +1,32 @@
+{
+  "assigned_to": null,
+  "branch_links": [],
+  "comment_count": 1,
+  "complexity": null,
+  "created_at": "2026-08-10T00:54:47Z",
+  "created_by": "agent:claude-fable-5",
+  "custom_fields": {},
+  "description": null,
+  "done_at": "2026-08-10T01:01:35Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZMK0SXB2H3HDP6HZHTX02TM",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
+  "id": "task_01KZMJMF52YQXFAGPB340SNEWW",
+  "last_event_id": "ev_01KZMK0Y92BNTYJHEF6FFY3153",
+  "last_status_changed_at": "2026-08-10T01:01:35Z",
+  "priority": "medium",
+  "relationships_out": [],
+  "reopened_count": 0,
+  "schema_version": 1,
+  "short_id": "PM-1",
+  "status": "done",
+  "tags": null,
+  "title": "BRANDING.md + 90s-slick demo HTML artifact for drawing software",
+  "type": "task",
+  "updated_at": "2026-08-10T01:01:35Z",
+  "urgency": null
+}

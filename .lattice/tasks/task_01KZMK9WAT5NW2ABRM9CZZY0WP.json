@@ -1,0 +1,32 @@
+{
+  "assigned_to": null,
+  "branch_links": [],
+  "comment_count": 1,
+  "complexity": null,
+  "created_at": "2026-08-10T01:06:28Z",
+  "created_by": "agent:claude-fable-5",
+  "custom_fields": {},
+  "description": null,
+  "done_at": "2026-08-10T01:13:35Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZMKPMS0RWMFYGNEC5A0K0ZW",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
+  "id": "task_01KZMK9WAT5NW2ABRM9CZZY0WP",
+  "last_event_id": "ev_01KZMKPXBT22PARJC0XDSMSQC9",
+  "last_status_changed_at": "2026-08-10T01:13:35Z",
+  "priority": "medium",
+  "relationships_out": [],
+  "reopened_count": 0,
+  "schema_version": 1,
+  "short_id": "PM-2",
+  "status": "done",
+  "tags": null,
+  "title": "Rebrand: Photoshop-by-teenage-engineering direction for BRANDING.md + demo",
+  "type": "task",
+  "updated_at": "2026-08-10T01:13:35Z",
+  "urgency": null
+}
