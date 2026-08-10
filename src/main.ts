@@ -1,44 +1,75 @@
-/** pattern maker PM–1 — boot. Phase 1: static device shell, dead controls. */
+/** pattern maker PM–1 — boot: build DOM, create store + doc, wire everything.
+ *  Phase 2: border-mode editor live with pencil + eraser. */
 
 import "./styles/tokens.css";
 import "./styles/app.css";
 
+import { hexToU32 } from "./raster/buffer";
+import { createDoc } from "./state/doc";
+import type { AppState } from "./state/store";
+import { createStore } from "./state/store";
+import { createGridEditor } from "./editor/grid-editor";
+import { TOOLS, toolById } from "./tools/index";
 import { h } from "./ui/dom";
 import { createToolbar } from "./ui/toolbar";
 import { createChips } from "./ui/chips";
 import { createTransport } from "./ui/transport";
 import { createLcd } from "./ui/lcd";
 
-const TOOL_SPECS = [
-  { id: "pencil", hotkey: "p", label: "pencil" },
-  { id: "eraser", hotkey: "e", label: "eraser" },
-  { id: "line", hotkey: "l", label: "line" },
-  { id: "rect", hotkey: "r", label: "rect" },
-  { id: "ellipse", hotkey: "o", label: "ellipse" },
-  { id: "fill", hotkey: "f", label: "fill" },
-  { id: "eyedropper", hotkey: "i", label: "eyedropper" },
-] as const;
+const DEFAULT_COLOR = "#232320";
+const DEFAULT_CELL = 16;
+
+const MODE_TIPS: Record<string, string> = {
+  border: "center stays empty. css says so",
+  tile: "draws on all nine. that's the point",
+};
 
 function boot(): void {
   const mount = document.getElementById("app");
   if (!mount) return;
 
+  const doc = createDoc(DEFAULT_CELL);
+  const store = createStore<AppState>({
+    mode: "border",
+    tool: "pencil",
+    color: hexToU32(DEFAULT_COLOR) ?? 0xff000000,
+    colorHex: DEFAULT_COLOR,
+    cellSize: DEFAULT_CELL,
+    hover: null,
+    dirtyDoc: 0,
+    dirtyPreview: 0,
+    tip: MODE_TIPS["border"] ?? "",
+  });
+
+  // ── actions ────────────────────────────────────────────────────────
+  function setTool(id: string): void {
+    const t = toolById(id);
+    store.set({ tool: t.id, tip: t.tip });
+  }
+
+  function setColorHex(hex: string): void {
+    const c = hexToU32(hex);
+    if (c === null) return;
+    store.set({ color: c, colorHex: hex });
+  }
+
+  // ── build the device ───────────────────────────────────────────────
   const toolbar = createToolbar({
-    tools: TOOL_SPECS,
+    tools: TOOLS.map((t) => ({ id: t.id, hotkey: t.hotkey, label: t.label })),
     handlers: {
-      onTool: () => {},
+      onTool: setTool,
       onMode: () => {},
       onCellStep: () => {},
     },
   });
 
-  const chips = createChips(() => {});
+  const chips = createChips(setColorHex);
   const transport = createTransport(() => {});
   const lcd = createLcd();
 
   const canvas = h("canvas", {
     className: "editor-canvas",
-    attrs: { "aria-label": "drawing canvas", width: "48", height: "48" },
+    attrs: { "aria-label": "drawing canvas" },
   });
   const bezel = h("div", { className: "bezel" }, canvas);
   const output = h(
@@ -47,7 +78,6 @@ function boot(): void {
     h("span", { className: "tb-label", text: "output" }),
   );
   const panel = h("div", { className: "panel" }, bezel, output);
-
   const deck = h("div", { className: "deck" }, chips.root, transport.root);
 
   const device = h(
@@ -70,18 +100,27 @@ function boot(): void {
     deck,
     lcd.root,
   );
-
   mount.append(device);
 
-  toolbar.sync({ tool: "pencil", mode: "border", cellSize: 16 });
-  chips.sync("#232320");
-  lcd.sync({
-    tool: "pencil",
-    hover: null,
-    mode: "border",
-    cellSize: 16,
-    tip: "warming up",
+  // ── editor ─────────────────────────────────────────────────────────
+  createGridEditor({
+    canvas,
+    container: bezel,
+    store,
+    doc,
+    getTool: () => toolById(store.get().tool),
+    beginStroke: () => {},
+    commit: () => {},
   });
+
+  // ── reflect state into the chrome ──────────────────────────────────
+  function syncAll(s: AppState): void {
+    toolbar.sync({ tool: s.tool, mode: s.mode, cellSize: s.cellSize });
+    chips.sync(s.colorHex);
+    lcd.sync({ tool: s.tool, hover: s.hover, mode: s.mode, cellSize: s.cellSize, tip: s.tip });
+  }
+  store.subscribe((s) => syncAll(s));
+  syncAll(store.get());
 }
 
 boot();
