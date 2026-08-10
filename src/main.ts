@@ -230,6 +230,7 @@ function boot(): void {
       cellSize: doc.cellSize,
       color: hexToU32(p.colorHex) ?? store.get().color,
       colorHex: p.colorHex,
+      focus: null, // loading swaps mode/doc under the view — never keep focus
       hover: null,
       tip: "project loaded",
     });
