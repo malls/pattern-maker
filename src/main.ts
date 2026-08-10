@@ -181,9 +181,10 @@ function boot(): void {
     const L = viewSize(doc);
     const buf = cropTopLeft(clip, Math.min(clip.w, L), Math.min(clip.h, L));
     const focus = store.get().focus;
+    let didntFit = false;
     if (focus && (buf.w > doc.cellSize || buf.h > doc.cellSize)) {
       exitFocus(); // doesn't fit the cell — paste into the full view instead
-      store.set({ tip: "back to nine. it didn't fit" });
+      didntFit = true;
     }
     setTool("select"); // paste always hands you the tool that moves it
     const win = windowBox();
@@ -197,7 +198,9 @@ function boot(): void {
     f.y = p.y;
     sel.float = f;
     sel.rect = null;
-    bumpSel({ tip: "floating. drag it. enter stamps" });
+    // the exit-focus tip wins when it fired — it explains a window change the
+    // "floating" tip would otherwise swallow (both are set in one turn)
+    bumpSel({ tip: didntFit ? "back to nine. it didn't fit" : "floating. drag it. enter stamps" });
   }
 
   /** Commit the float into the doc — one undo entry; the stamped bounds stay
