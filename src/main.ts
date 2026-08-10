@@ -3,12 +3,13 @@
 import "./styles/tokens.css";
 import "./styles/app.css";
 
+import type { PixelBuffer } from "./raster/buffer";
 import { hexToU32 } from "./raster/buffer";
 import { line, rectOutline } from "./raster/raster";
 import type { Doc } from "./state/doc";
 import { clampCell, clearMode, createDoc, plotBorder, setCellSize, viewSize } from "./state/doc";
 import * as history from "./state/history";
-import { createSelection } from "./state/selection";
+import { copyRect, createSelection, eraseRect } from "./state/selection";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
 import { activeBuffer } from "./state/doc";
@@ -91,6 +92,9 @@ function boot(): void {
 
   // ── selection (ephemeral view state — never persisted, never in history) ──
   const sel = createSelection();
+  /** in-memory clipboard: survives mode / cell-size / focus changes, is never
+   *  persisted, and never touches the system clipboard */
+  let clipboard: PixelBuffer | null = null;
 
   // ── actions ────────────────────────────────────────────────────────
   function bumpDoc(patch: Partial<AppState> = {}): void {
@@ -114,6 +118,40 @@ function boot(): void {
   function clearSelectionPatch(): Partial<AppState> {
     sel.rect = null;
     return { dirtySel: store.get().dirtySel + 1 };
+  }
+
+  function copySel(): void {
+    const r = sel.rect;
+    if (!r) {
+      store.set({ tip: "nothing selected. m marks" });
+      return;
+    }
+    clipboard = copyRect(doc, store.get().mode, r);
+    store.set({ tip: `copied ${r.w}×${r.h}` });
+  }
+
+  /** copy + erase, one undo entry; the selection survives the cut */
+  function cutSel(): void {
+    const r = sel.rect;
+    if (!r) {
+      store.set({ tip: "nothing selected. m marks" });
+      return;
+    }
+    const s = store.get();
+    clipboard = copyRect(doc, s.mode, r);
+    history.push(hist, doc, s.mode);
+    eraseRect(doc, s.mode, r);
+    bumpDoc({ tip: `cut ${r.w}×${r.h}` });
+  }
+
+  /** erase without touching the clipboard */
+  function deleteSel(): void {
+    const r = sel.rect;
+    if (!r) return;
+    const s = store.get();
+    history.push(hist, doc, s.mode);
+    eraseRect(doc, s.mode, r);
+    bumpDoc({ tip: "erased" });
   }
 
   function setTool(id: string): void {
@@ -410,6 +448,12 @@ function boot(): void {
       } else if (key === "y") {
         e.preventDefault();
         doRedo();
+      } else if (key === "c") {
+        if (sel.rect) e.preventDefault();
+        copySel();
+      } else if (key === "x") {
+        if (sel.rect) e.preventDefault();
+        cutSel();
       }
       return;
     }
@@ -418,6 +462,11 @@ function boot(): void {
       // selection always wins over focus-exit; never swallowed when idle
       if (sel.rect) deselect();
       else if (store.get().focus) exitFocus();
+      return;
+    }
+    if ((key === "delete" || key === "backspace") && sel.rect) {
+      e.preventDefault();
+      deleteSel();
       return;
     }
     if (store.get().focus && key.startsWith("arrow")) {
