@@ -6,7 +6,7 @@ export const ellipseTool: Tool = makeShapeTool(
   "ellipse",
   "o",
   "ellipse",
-  "drag corner to corner. circle-ish comes free",
+  "circle-ish comes free. click again to fill",
   ellipseOutline,
   ellipseFilled,
 );

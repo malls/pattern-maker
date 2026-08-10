@@ -4,6 +4,8 @@ import { h } from "./dom";
 
 export interface LcdState {
   tool: string;
+  /** the active tool is a shape tool set to draw filled */
+  filled: boolean;
   hover: { x: number; y: number } | null;
   mode: string;
   cellSize: number;
@@ -74,7 +76,8 @@ export function createLcd(): LcdView {
   return {
     root,
     sync(s) {
-      toolEl.textContent = s.tool;
+      // the word only appears in the non-default state — state, not decoration
+      toolEl.textContent = s.filled ? `${s.tool} filled` : s.tool;
       xEl.textContent = s.hover ? pad3(s.hover.x) : "—";
       yEl.textContent = s.hover ? pad3(s.hover.y) : "—";
       modeEl.textContent = s.mode;

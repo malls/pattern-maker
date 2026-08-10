@@ -126,6 +126,10 @@ body {
   background: var(--orange);
   box-shadow: 0 0 5px rgba(255,78,0,.9);
 }
+/* a fillable shape tool in filled mode: the same glyph, solid. still
+   currentColor, so it is ink on plastic at rest and orange on the active
+   charcoal cap — no new color, no icon swap. */
+.tool[data-fill="on"] svg { fill: currentColor; }
 
 /* ── toolbar (top rail) ─────────────────────────────────────────────── */
 .toolbar {

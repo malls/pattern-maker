@@ -26,7 +26,8 @@ const ICONS: Record<string, string> = {
 };
 
 export interface ToolbarSpec {
-  tools: readonly { id: string; hotkey: string; label: string }[];
+  /** fillable is required-and-boolean on purpose (exactOptionalPropertyTypes) */
+  tools: readonly { id: string; hotkey: string; label: string; fillable: boolean }[];
   handlers: {
     onTool(id: string): void;
     onMode(mode: string): void;
@@ -40,11 +41,20 @@ export interface ToolbarSpec {
 
 export interface ToolbarView {
   root: HTMLElement;
-  sync(state: { tool: string; mode: string; cellSize: number; focus: boolean }): void;
+  sync(state: {
+    tool: string;
+    mode: string;
+    cellSize: number;
+    focus: boolean;
+    /** which fillable tools are currently in filled mode */
+    shapeFill: Readonly<Record<string, boolean>>;
+  }): void;
 }
 
 export function createToolbar(spec: ToolbarSpec): ToolbarView {
   const toolKeys = new Map<string, HTMLButtonElement>();
+  /** the fillable keys only — the rest never carry data-fill */
+  const fillKeys = new Map<string, { key: HTMLButtonElement; label: string; hotkey: string }>();
   const toolGroup = h("div", { className: "tb-group", attrs: { role: "toolbar", "aria-label": "tools" } });
   toolGroup.append(h("span", { className: "tb-label", text: "tools" }));
   for (const t of spec.tools) {
@@ -52,8 +62,14 @@ export function createToolbar(spec: ToolbarSpec): ToolbarView {
       className: "key tool",
       title: `${t.label} (${t.hotkey})`,
       html: ICONS[t.id] ?? "",
-      attrs: { "aria-label": t.label, "aria-pressed": "false", "data-tool": t.id },
+      attrs: {
+        "aria-label": t.label,
+        "aria-pressed": "false",
+        "data-tool": t.id,
+        ...(t.fillable ? { "data-fill": "off" } : {}),
+      },
     });
+    if (t.fillable) fillKeys.set(t.id, { key, label: t.label, hotkey: t.hotkey });
     key.append(h("i", { className: "led", attrs: { "aria-hidden": "true" } }));
     key.addEventListener("click", () => spec.handlers.onTool(t.id));
     toolKeys.set(t.id, key);
@@ -161,6 +177,14 @@ export function createToolbar(spec: ToolbarSpec): ToolbarView {
     sync(state) {
       for (const [id, key] of toolKeys) {
         key.setAttribute("aria-pressed", id === state.tool ? "true" : "false");
+      }
+      // attribute writes only: sync runs on every store notification, hover
+      // included, and re-setting innerHTML would also delete the .led
+      for (const [id, f] of fillKeys) {
+        const on = state.shapeFill[id] === true;
+        f.key.setAttribute("data-fill", on ? "on" : "off");
+        f.key.setAttribute("aria-label", on ? `${f.label} filled` : f.label);
+        f.key.title = on ? `${f.label} filled (${f.hotkey})` : `${f.label} (${f.hotkey})`;
       }
       for (const [id, key] of modeKeys) {
         key.setAttribute("aria-pressed", id === state.mode ? "true" : "false");

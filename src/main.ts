@@ -256,10 +256,24 @@ function boot(): void {
     return clearSelectionPatch();
   }
 
+  /** Re-selecting an already-active shape tool flips it between outline and
+   *  filled. Plain store.set: the flag changes neither the document nor the
+   *  previews, so it must bump neither dirtyDoc nor dirtyPreview — no preview
+   *  regeneration, no autosave churn, no undo entry. */
+  function toggleShapeFill(id: string): void {
+    const s = store.get();
+    const next = !s.shapeFill[id];
+    store.set({
+      shapeFill: { ...s.shapeFill, [id]: next },
+      tip: next ? "filled. click again for outline" : "outline. click again for filled",
+    });
+  }
+
   function setTool(id: string): void {
     const t = toolById(id);
     if (store.get().tool === t.id) {
-      store.set({ tip: t.tip });
+      if (t.fillable) toggleShapeFill(t.id);
+      else store.set({ tip: t.tip });
       return;
     }
     commitFloatFirst();
@@ -520,7 +534,12 @@ function boot(): void {
 
   // ── build the device ───────────────────────────────────────────────
   const toolbar = createToolbar({
-    tools: TOOLS.map((t) => ({ id: t.id, hotkey: t.hotkey, label: t.label })),
+    tools: TOOLS.map((t) => ({
+      id: t.id,
+      hotkey: t.hotkey,
+      label: t.label,
+      fillable: t.fillable === true,
+    })),
     handlers: {
       onTool: setTool,
       onMode: setMode,
@@ -661,7 +680,10 @@ function boot(): void {
       return;
     }
     const tool = toolByHotkey(key);
-    if (tool) setTool(tool.id);
+    if (tool) {
+      if (e.repeat) return; // holding a tool key must not strobe the fill flag
+      setTool(tool.id);
+    }
   });
 
   // ── live previews (150 ms debounce while drawing; instant on commit) ─
@@ -706,11 +728,18 @@ function boot(): void {
 
   // ── reflect state into the chrome ──────────────────────────────────
   function syncAll(s: AppState): void {
-    toolbar.sync({ tool: s.tool, mode: s.mode, cellSize: s.cellSize, focus: s.focus !== null });
+    toolbar.sync({
+      tool: s.tool,
+      mode: s.mode,
+      cellSize: s.cellSize,
+      focus: s.focus !== null,
+      shapeFill: s.shapeFill,
+    });
     chips.sync(s.colorHex);
     transport.sync({ exportScale: s.exportScale });
     lcd.sync({
       tool: s.tool,
+      filled: s.shapeFill[s.tool] === true,
       hover: s.hover,
       mode: s.mode,
       cellSize: s.cellSize,

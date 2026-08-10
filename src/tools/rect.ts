@@ -6,7 +6,7 @@ export const rectTool: Tool = makeShapeTool(
   "rect",
   "r",
   "rect",
-  "drag corner to corner",
+  "drag corner to corner. click again to fill",
   rectOutline,
   rectFilled,
 );
