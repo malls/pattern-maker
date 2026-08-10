@@ -4,7 +4,7 @@ import "./styles/tokens.css";
 import "./styles/app.css";
 
 import type { PixelBuffer } from "./raster/buffer";
-import { clone, hexToU32 } from "./raster/buffer";
+import { clone, hexToU32, scaleUp } from "./raster/buffer";
 import { line, rectOutline } from "./raster/raster";
 import type { Doc } from "./state/doc";
 import { clampCell, clearMode, createDoc, plotBorder, setCellSize, viewSize } from "./state/doc";
@@ -466,10 +466,20 @@ function boot(): void {
 
   function doCopyCss(): void {
     const s = store.get();
-    const uri = bufferToDataURI(activeBuffer(doc, s.mode));
-    const snippet = s.mode === "border" ? borderCSS(uri, doc.cellSize) : tileCSS(uri, doc.cellSize);
+    // the snippet describes the image it embeds, so both come from the same
+    // upscaled buffer: the slice is in image pixels and must scale with it
+    const scale = s.exportScale;
+    const unit = doc.cellSize * scale;
+    const uri = bufferToDataURI(scaleUp(activeBuffer(doc, s.mode), scale));
+    const snippet = s.mode === "border" ? borderCSS(uri, unit) : tileCSS(uri, unit);
     void copyText(snippet).then((ok) => {
-      store.set({ tip: ok ? "css copied" : "couldn't reach the clipboard" });
+      store.set({
+        tip: ok
+          ? scale === 1
+            ? "css copied"
+            : `css copied ${scale}×`
+          : "couldn't reach the clipboard",
+      });
     });
   }
 
