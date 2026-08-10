@@ -1,6 +1,7 @@
 /** Minimal observable store — the app's only communication mechanism. */
 
 import type { Mode } from "./doc";
+import type { PaletteId } from "./palettes";
 
 export interface Store<T extends object> {
   get(): T;
@@ -38,6 +39,10 @@ export interface AppState {
   /** current color as '#rrggbb' for chips / persistence */
   colorHex: string;
   cellSize: number;
+  /** Which chip set the deck shows. Cosmetic to the document — switching it
+   *  never touches pixels, history, or previews — but it belongs to the
+   *  project and is persisted with it. */
+  palette: PaletteId;
   /** zoom-to-one-cell: which 3×3 cell is focused, or null (whole view).
    *  Ephemeral UI state — never persisted, never in undo history.
    *  cx, cy ∈ {0,1,2}; border mode never allows (1,1). */

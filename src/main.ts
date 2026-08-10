@@ -19,6 +19,7 @@ import {
 } from "./state/selection";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
+import { DEFAULT_PALETTE, paletteById } from "./state/palettes";
 import { activeBuffer } from "./state/doc";
 import type { DecodedProject } from "./state/persist";
 import { autosave, downloadProject, loadAutosave, pickAndImportProject } from "./state/persist";
@@ -91,6 +92,7 @@ function boot(): void {
     color: hexToU32(startColor) ?? 0xff000000,
     colorHex: startColor,
     cellSize: doc.cellSize,
+    palette: DEFAULT_PALETTE,
     focus: null,
     hover: null,
     exportScale: 1, // session-only: a restored project never dictates it
@@ -549,7 +551,7 @@ function boot(): void {
     },
   });
 
-  const chips = createChips(setColorHex);
+  const chips = createChips({ onColor: setColorHex });
   const transport = createTransport({ onAction: onTransport, onScaleStep: stepScale });
   const lcd = createLcd();
 
@@ -735,7 +737,7 @@ function boot(): void {
       focus: s.focus !== null,
       shapeFill: s.shapeFill,
     });
-    chips.sync(s.colorHex);
+    chips.sync({ colorHex: s.colorHex, swatches: paletteById(s.palette).swatches });
     transport.sync({ exportScale: s.exportScale });
     lcd.sync({
       tool: s.tool,
