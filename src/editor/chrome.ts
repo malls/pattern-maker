@@ -64,3 +64,48 @@ export function drawCenterLock(
   }
   ctx.restore();
 }
+
+/** Focused-view mini-map: a small 3×3 glyph in the bottom-right letterbox
+ *  corner showing which cell is focused. Hairline squares on the charcoal,
+ *  the focused cell filled orange, border-mode center dimmed hollow. Drawn
+ *  in raw canvas device px (outside the art-rect translate); skipped when
+ *  the letterbox is too tight — the LED + LCD carry the state. */
+export function drawFocusMinimap(
+  ctx: CanvasRenderingContext2D,
+  opts: {
+    mode: Mode;
+    cx: number;
+    cy: number;
+    devW: number;
+    devH: number;
+    ox: number;
+    oy: number;
+    artSize: number;
+  },
+): void {
+  const { mode, cx, cy, devW, devH, ox, oy } = opts;
+  if (ox < 30 && oy < 30) return; // no letterbox room — skip entirely
+  const cell = 6;
+  const gap = 1;
+  const total = 3 * cell + 2 * gap;
+  const inset = 8;
+  const x0 = devW - inset - total;
+  const y0 = devH - inset - total;
+  ctx.save();
+  ctx.lineWidth = 1;
+  for (let gy = 0; gy < 3; gy++) {
+    for (let gx = 0; gx < 3; gx++) {
+      const x = x0 + gx * (cell + gap);
+      const y = y0 + gy * (cell + gap);
+      if (gx === cx && gy === cy) {
+        ctx.fillStyle = "#FF4E00"; // --orange
+        ctx.fillRect(x, y, cell, cell);
+      } else {
+        const center = mode === "border" && gx === 1 && gy === 1;
+        ctx.strokeStyle = center ? "rgba(242,241,236,.15)" : "rgba(242,241,236,.35)";
+        ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
+      }
+    }
+  }
+  ctx.restore();
+}

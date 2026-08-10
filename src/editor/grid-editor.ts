@@ -13,7 +13,7 @@ import type { AppState, Store } from "../state/store";
 import type { Doc } from "../state/doc";
 import { activeBuffer, floodView, getViewPx, plotView, viewSize } from "../state/doc";
 import type { Pt, Tool, ToolContext } from "../tools/types";
-import { drawCenterLock, drawChecker, drawDelineation } from "./chrome";
+import { drawCenterLock, drawChecker, drawDelineation, drawFocusMinimap } from "./chrome";
 
 export interface GridEditorDeps {
   canvas: HTMLCanvasElement;
@@ -42,6 +42,7 @@ function get2d(c: HTMLCanvasElement): CanvasRenderingContext2D {
 }
 
 const clampN = (n: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, n));
+const modN = (n: number, m: number): number => ((n % m) + m) % m;
 
 export function createGridEditor(deps: GridEditorDeps): GridEditor {
   const { canvas, container, store, doc } = deps;
@@ -148,6 +149,18 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
       drawDelineation(ctx, L, z, s.mode);
       if (s.mode === "border") drawCenterLock(ctx, C, z, dpr);
       ctx.restore();
+    } else {
+      // letterbox mini-map (decorative — skipped when the letterbox is tight)
+      drawFocusMinimap(ctx, {
+        mode: s.mode,
+        cx: s.focus.cx,
+        cy: s.focus.cy,
+        devW,
+        devH,
+        ox,
+        oy,
+        artSize: Lf * z,
+      });
     }
   }
 
@@ -240,9 +253,14 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
     };
   }
 
-  /** What the LCD shows for a mapped point. */
+  /** What the LCD shows for a mapped point: in focused tile mode the raw
+   *  margin coordinates display wrapped onto the cell, so the readout never
+   *  leaves range while tools keep receiving raw values. */
   function displayPt(p: Pt): Pt {
-    return p;
+    const s = store.get();
+    if (!s.focus || s.mode !== "tile") return p;
+    const C = doc.cellSize;
+    return { x: fx0 + modN(p.x - fx0, C), y: fy0 + modN(p.y - fy0, C) };
   }
 
   function bumpDoc(): void {
