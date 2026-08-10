@@ -691,6 +691,17 @@ function boot(): void {
       toggleFocus();
       return;
     }
+    // brackets step the palette — the near-universal "through a set" binding,
+    // and they cost no letter the tool roster still wants. Shift is already
+    // the ±8 modifier elsewhere, so { and } stay out of it.
+    if (key === "[") {
+      stepPalette(-1);
+      return;
+    }
+    if (key === "]") {
+      stepPalette(1);
+      return;
+    }
     if (key === "1") {
       setMode("border");
       return;
