@@ -284,6 +284,14 @@ body {
   box-shadow: inset 0 1px 2px rgba(255,255,255,.35), 0 1px 0 rgba(255,255,255,.6);
   flex: none;
 }
+/* palette selector: the cell stepper's parts, sized to the deck row */
+.pal-stepper .key { width: 26px; height: 26px; }
+.pal-stepper .readout {
+  width: 78px;               /* fits "rainbow"; fixed so the row never jitters */
+  padding: 6px 8px;
+  font-variant-numeric: normal;   /* it's a word, not a readout of figures */
+  text-align: center;
+}
 .chips {
   display: grid;
   grid-template-columns: repeat(8, 19px);

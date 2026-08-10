@@ -19,7 +19,7 @@ import {
 } from "./state/selection";
 import type { AppState } from "./state/store";
 import { createStore } from "./state/store";
-import { DEFAULT_PALETTE, paletteById } from "./state/palettes";
+import { DEFAULT_PALETTE, PALETTES, paletteById } from "./state/palettes";
 import { activeBuffer } from "./state/doc";
 import type { DecodedProject } from "./state/persist";
 import { autosave, downloadProject, loadAutosave, pickAndImportProject } from "./state/persist";
@@ -440,6 +440,24 @@ function boot(): void {
     store.set({ exportScale: next, tip: `scale ${next}×` });
   }
 
+  /** Move through PALETTES, wrapping. Plain store.set on purpose: the palette
+   *  changes neither the document nor the previews, so it must bump neither
+   *  dirtyDoc nor dirtyPreview — no preview regeneration, no history entry.
+   *  It IS persisted, so the autosave subscriber watches s.palette.
+   *
+   *  Wraps rather than clamps: cells and export scales have ends ("that's as
+   *  big as cells get"), a set of schemes doesn't — it's a rotary selector,
+   *  not a fader. So there is no at-the-limit tip to print. */
+  function stepPalette(delta: number): void {
+    const s = store.get();
+    const n = PALETTES.length;
+    const i = PALETTES.findIndex((p) => p.id === s.palette);
+    const j = (((i < 0 ? 0 : i) + delta) % n + n) % n;
+    const next = PALETTES[j] ?? PALETTES[0];
+    if (!next) return;
+    store.set({ palette: next.id, tip: next.tip });
+  }
+
   function doSave(): void {
     const s = store.get();
     downloadProject(doc, s.mode, s.colorHex);
@@ -551,7 +569,7 @@ function boot(): void {
     },
   });
 
-  const chips = createChips({ onColor: setColorHex });
+  const chips = createChips({ onColor: setColorHex, onPaletteStep: stepPalette });
   const transport = createTransport({ onAction: onTransport, onScaleStep: stepScale });
   const lcd = createLcd();
 
@@ -737,7 +755,8 @@ function boot(): void {
       focus: s.focus !== null,
       shapeFill: s.shapeFill,
     });
-    chips.sync({ colorHex: s.colorHex, swatches: paletteById(s.palette).swatches });
+    const p = paletteById(s.palette);
+    chips.sync({ colorHex: s.colorHex, swatches: p.swatches, paletteLabel: p.label });
     transport.sync({ exportScale: s.exportScale });
     lcd.sync({
       tool: s.tool,

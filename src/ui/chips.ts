@@ -6,11 +6,13 @@ import { h } from "./dom";
 
 export interface ChipsSpec {
   onColor(hex: string): void;
+  /** Step the palette by ±1 position. It wraps — a set of schemes has no ends. */
+  onPaletteStep(delta: number): void;
 }
 
 export interface ChipsView {
   root: HTMLElement;
-  sync(s: { colorHex: string; swatches: readonly string[] }): void;
+  sync(s: { colorHex: string; swatches: readonly string[]; paletteLabel: string }): void;
 }
 
 export function createChips(spec: ChipsSpec): ChipsView {
@@ -51,6 +53,34 @@ export function createChips(spec: ChipsSpec): ChipsView {
     }
   }
 
+  // palette stepper — the export-scale stepper's vocabulary: a fixed set of
+  // values, so the readout is an inert display rather than a type-in field.
+  const readout = h("span", {
+    className: "readout",
+    attrs: { "aria-live": "polite", "aria-label": "palette" },
+  });
+  const prev = h("button", {
+    className: "key",
+    text: "−",
+    title: "previous palette ([)",
+    attrs: { "aria-label": "previous palette" },
+  });
+  const next = h("button", {
+    className: "key",
+    text: "+",
+    title: "next palette (])",
+    attrs: { "aria-label": "next palette" },
+  });
+  prev.addEventListener("click", () => spec.onPaletteStep(-1));
+  next.addEventListener("click", () => spec.onPaletteStep(1));
+  const stepper = h(
+    "div",
+    { className: "stepper pal-stepper", attrs: { role: "group", "aria-label": "palette" } },
+    prev,
+    readout,
+    next,
+  );
+
   const custom = h("input", {
     className: "custom",
     title: "custom color",
@@ -58,12 +88,13 @@ export function createChips(spec: ChipsSpec): ChipsView {
   });
   custom.addEventListener("input", () => spec.onColor(custom.value));
 
-  const root = h("div", { className: "tb-group" }, label, current, wrap, custom);
+  const root = h("div", { className: "tb-group" }, label, current, stepper, wrap, custom);
 
   return {
     root,
     sync(s) {
       render(s.swatches);
+      readout.textContent = s.paletteLabel;
       const lower = s.colorHex.toLowerCase();
       current.style.background = s.colorHex;
       // the ring means "this chip is the current color" — if none is, none
