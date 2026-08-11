@@ -254,6 +254,7 @@ body {
   color: var(--label);
   user-select: none;
 }
+.tp-col { display: grid; gap: 12px; }
 .tp-item { display: grid; gap: 5px; }
 .tp-swatch {
   height: 158px;
