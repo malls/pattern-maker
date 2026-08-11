@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- the PM–1 mark: charcoal badge, 3×3 pixel grid, live center. BRANDING.md §2 -->
+  <rect width="16" height="16" rx="3.5" fill="#1B1B1A"/>
+  <g fill="#FBFAF8">
+    <rect x="2.5" y="2.5" width="3" height="3"/>
+    <rect x="6.5" y="2.5" width="3" height="3"/>
+    <rect x="10.5" y="2.5" width="3" height="3"/>
+    <rect x="2.5" y="6.5" width="3" height="3"/>
+    <rect x="10.5" y="6.5" width="3" height="3"/>
+    <rect x="2.5" y="10.5" width="3" height="3"/>
+    <rect x="6.5" y="10.5" width="3" height="3"/>
+    <rect x="10.5" y="10.5" width="3" height="3"/>
+  </g>
+  <rect x="6.5" y="6.5" width="3" height="3" fill="#FF4E00"/>
+</svg>

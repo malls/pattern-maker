@@ -24,6 +24,7 @@ The restraint is the point. When everything is gray, one orange dot is a siren.
 - The model number is **PM–1** — uppercase, en dash (never a hyphen: `PM–1`, not `PM-1`), set in the mono face, presented as a charcoal badge chip. Hardware gets model numbers; this is hardware.
 - Lockup: `pattern maker` + PM–1 badge, baseline-aligned, wordmark first.
 - The descriptor line is `professional pattern instrument` — lowercase mono, label gray.
+- **The app mark** (favicon, home-screen icon): the badge idiom carrying the product's core motif — a charcoal (`#1B1B1A`) rounded square holding a 3×3 grid of paper (`#FBFAF8`) pixels whose center pixel is orange (`#FF4E00`), the live LED. Flat, tokens only, no glow or gradient — it must survive 16px. Geometry at 16: radius 3.5, cells 3×3 with 1px gaps, 2.5 margin. Shipped as `public/favicon.svg` + PNG rasters; the 180px home-screen version is full-bleed charcoal (iOS masks its own corners).
 - Version flourishes ("’96", splash art, etc.) from the previous identity are retired.
 
 ## 3. Color
