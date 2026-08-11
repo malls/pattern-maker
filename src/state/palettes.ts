@@ -5,10 +5,10 @@
  *  §3): slots 0–4 are the value spine dark → light, slot 0 is the palette's
  *  ink, slot 4 is `#FBFAF8` — the --paper token, identical in every palette
  *  (you print onto one stock; the inks change). Slots 5–15 are the eleven
- *  colors: wash, earth, accent, then the hue wheel — except `rainbow`, which
- *  spends all eleven on one sweep, on purpose. */
+ *  colors: wash, earth, accent, then the hue wheel — except `rainbow` and
+ *  `neon`, which spend all eleven on one sweep, on purpose. */
 
-export type PaletteId = "shop" | "mono" | "pastel" | "gem" | "rainbow";
+export type PaletteId = "shop" | "mono" | "pastel" | "gem" | "rainbow" | "neon";
 
 export interface Palette {
   readonly id: PaletteId;
@@ -81,15 +81,30 @@ export const PALETTES: readonly Palette[] = [
   {
     id: "rainbow",
     label: "rainbow",
-    tip: "rainbow. eleven inks, one sweep",
-    /* Neutral brand spine so the sweep reads clean against it, then eleven
-     * hues at a similar mid value: a printed spectrum chart, not RGB
-     * primaries. */
+    tip: "rainbow. the css keywords, straight",
+    /* Every swatch here is a CSS named color, spelled exactly: the spine is
+     * black/dimgray/gray/silver, then eleven hue keywords in one sweep. These
+     * values must stay exact — a near-value would make the name a lie. Paper
+     * stays #FBFAF8 (the stock does not change with the inks). */
     swatches: [
-      "#232320", "#575651", "#8B8A85", "#C6C5BF",
-      "#FBFAF8", "#C9332F", "#D9701C", "#D8AE14",
-      "#86A32B", "#3B9457", "#1E9083", "#2081A5",
-      "#2B5CB8", "#5A46B5", "#8C41A8", "#C0417E",
+      "#000000", "#696969", "#808080", "#C0C0C0", // black, dimgray, gray, silver
+      "#FBFAF8", "#FF0000", "#FF4500", "#FFA500", // paper, red, orangered, orange
+      "#FFD700", "#FFFF00", "#00FF00", "#008000", // gold, yellow, lime, green
+      "#00FFFF", "#0000FF", "#4B0082", "#FF00FF", // cyan, blue, indigo, magenta
+    ],
+  },
+  {
+    id: "neon",
+    label: "neon",
+    tip: "neon. loud on a dark ground",
+    /* The one palette with a cool spine: a blue-violet near-black rather than
+     * the brand's warm grays, because neon on warm putty reads muddy. Eleven
+     * hues in the same ordered sweep as rainbow. */
+    swatches: [
+      "#0B0B12", "#1E1B2E", "#4A4468", "#8F86B8", // spine: ink → dusk
+      "#FBFAF8", "#FF1D58", "#FF6B00", "#FFD400", // paper, rose, orange, yellow
+      "#C6FF00", "#39FF14", "#00FFC6", "#00E5FF", // acid, green, mint, cyan
+      "#00A3FF", "#4D5BFF", "#B026FF", "#FF00E5", // azure, blue, purple, magenta
     ],
   },
 ];
