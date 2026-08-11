@@ -604,6 +604,20 @@ function boot(): void {
       h("span", { className: "wordmark", text: "pattern maker" }),
       h("span", { className: "model", text: "PM–1" }),
       h("span", { className: "tagline", text: "professional pattern instrument" }),
+      // the desktop app doesn't advertise itself
+      ...("__TAURI_INTERNALS__" in window
+        ? []
+        : [
+            h("a", {
+              className: "download",
+              text: "desktop ↓",
+              attrs: {
+                href: "https://github.com/malls/pattern-maker/releases/latest",
+                target: "_blank",
+                rel: "noopener",
+              },
+            }),
+          ]),
       h("span", { className: "power", title: "on", attrs: { "aria-hidden": "true" } }),
     ),
     toolbar.root,

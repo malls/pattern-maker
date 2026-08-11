@@ -80,6 +80,14 @@ body {
   color: var(--label);
   letter-spacing: .04em;
 }
+.download {
+  font: 10px var(--font-mono);
+  color: var(--label);
+  letter-spacing: .04em;
+  text-decoration: none;
+}
+.download:hover { color: var(--ink); }
+.download:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .power {
   width: 7px; height: 7px;
   border-radius: 50%;
