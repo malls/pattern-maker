@@ -1,7 +1,7 @@
 {
   "assigned_to": null,
   "branch_links": [],
-  "comment_count": 2,
+  "comment_count": 3,
   "complexity": null,
   "created_at": "2026-08-11T22:27:35Z",
   "created_by": "human:forrest",
@@ -16,7 +16,7 @@
     }
   ],
   "id": "task_01KZSF0CD18RCTGV1M0B1R3XAQ",
-  "last_event_id": "ev_01KZSFPW6ZJ6BYXR5RGMAEV82V",
+  "last_event_id": "ev_01KZSFW66ZKB0TKSDV4FW5QZ4T",
   "last_status_changed_at": "2026-08-11T22:39:52Z",
   "priority": "medium",
   "relationships_out": [],
@@ -27,6 +27,6 @@
   "tags": null,
   "title": "Desktop: Tauri wrap + Actions release pipeline + download links",
   "type": "task",
-  "updated_at": "2026-08-11T22:39:52Z",
+  "updated_at": "2026-08-11T22:42:46Z",
   "urgency": null
 }
