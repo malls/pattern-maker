@@ -459,6 +459,7 @@ function boot(): void {
   }
 
   function doSave(): void {
+    commitFloatFirst(); // an explicit save writes what's on screen
     const s = store.get();
     downloadProject(doc, s.mode, s.colorHex, s.palette);
     store.set({ tip: "pattern.json" });
@@ -500,6 +501,7 @@ function boot(): void {
   }
 
   function doCopyCss(): void {
+    commitFloatFirst(); // the snippet must describe what's on screen
     const s = store.get();
     // the snippet describes the image it embeds, so both come from the same
     // upscaled buffer: the slice is in image pixels and must scale with it
@@ -519,6 +521,7 @@ function boot(): void {
   }
 
   function doExportPng(): void {
+    commitFloatFirst(); // an explicit export writes what's on screen
     const s = store.get();
     const scale = s.exportScale;
     downloadPNG(activeBuffer(doc, s.mode), scale);
