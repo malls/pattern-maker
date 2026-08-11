@@ -1,0 +1,32 @@
+{
+  "assigned_to": null,
+  "branch_links": [],
+  "comment_count": 2,
+  "complexity": null,
+  "created_at": "2026-08-11T03:16:41Z",
+  "created_by": "human:forrest",
+  "custom_fields": {},
+  "description": null,
+  "done_at": "2026-08-11T03:27:21Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZQDRDH58D4QS2R981S7PHZA",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
+  "id": "task_01KZQD514TDWCS920V0M4KP7F7",
+  "last_event_id": "ev_01KZQDRHDH8NDSCF88NRVHBX1R",
+  "last_status_changed_at": "2026-08-11T03:27:21Z",
+  "priority": "medium",
+  "relationships_out": [],
+  "reopened_count": 0,
+  "schema_version": 1,
+  "short_id": "PM-12",
+  "status": "done",
+  "tags": null,
+  "title": "Rainbow palette from CSS named colors + add neon palette",
+  "type": "task",
+  "updated_at": "2026-08-11T03:27:21Z",
+  "urgency": null
+}
