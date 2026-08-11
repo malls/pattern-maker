@@ -1,26 +1,32 @@
 {
   "assigned_to": null,
   "branch_links": [],
-  "comment_count": 0,
+  "comment_count": 2,
   "complexity": null,
   "created_at": "2026-08-11T22:55:26Z",
   "created_by": "human:forrest",
   "custom_fields": {},
   "description": null,
-  "done_at": null,
-  "evidence_refs": [],
+  "done_at": "2026-08-11T22:57:07Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZSGPETCK5GDK14N9W87NVNZ",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
   "id": "task_01KZSGKCGW6K38HM4MX5F3QQ2B",
-  "last_event_id": "ev_01KZSGMN15BGAKAFSMECX8471J",
-  "last_status_changed_at": "2026-08-11T22:56:08Z",
+  "last_event_id": "ev_01KZSGPEXJVGYV3VBZCVC0WGK6",
+  "last_status_changed_at": "2026-08-11T22:57:07Z",
   "priority": "medium",
   "relationships_out": [],
   "reopened_count": 0,
   "schema_version": 1,
   "short_id": "PM-19",
-  "status": "in_progress",
+  "status": "done",
   "tags": null,
   "title": "Web version links to the GitHub repo from the masthead",
   "type": "task",
-  "updated_at": "2026-08-11T22:56:08Z",
+  "updated_at": "2026-08-11T22:57:07Z",
   "urgency": null
 }
