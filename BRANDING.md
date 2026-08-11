@@ -60,7 +60,9 @@ Warm-biased grays for the body, charcoal for anything that displays information,
 
 ### The drawing palettes
 
-The in-canvas color chips are part of the brand — slightly muted, screen-print flavored, nothing neon. User artwork may be loud; the chips that make it should still look considered. There are five sets, stepped from the deck, and every one of them obeys the same slot contract.
+The in-canvas color chips are part of the brand — slightly muted and screen-print flavored by default. User artwork may be loud; the chips that make it should still look considered. There are six sets, stepped from the deck, and every one of them obeys the same slot contract.
+
+**Where "nothing neon" applies.** The house set (`shop`) and everything in the chrome — body, keys, LCD, the accent — stay muted and screen-print flavored. That rule is absolute there and is not up for negotiation. A *named* palette may depart from it where its own name demands the departure: `rainbow` is the exact CSS color keywords, and `neon` is built to glow. The licence is per-palette, granted by the name, and never extends to the chrome or the accent. It is not a licence to brighten the other four.
 
 **The slot contract.** Each palette is exactly 16 swatches in fixed roles, which is what makes switching sets safe — the same two chips are ink and paper in every scheme, so muscle memory survives.
 
@@ -71,9 +73,11 @@ The in-canvas color chips are part of the brand — slightly muted, screen-print
 | 4 | paper | `#FBFAF8` — the `--paper` token, **identical in every palette**. |
 | 5–15 | the colors | Wash, earth, accent, then the hue wheel: red, yellow, green, teal, blue, violet, magenta, pink. |
 
-Slots 0–4 are the value spine, dark to light. Paper is fixed and ink is not because you print onto one stock and the inks change: the substrate is a constant of the instrument, the pigment moves with the scheme. `rainbow` is the one departure from the soft part of the contract — it spends all eleven color slots on a single hue sweep, on purpose.
+Slots 0–4 are the value spine, dark to light. Paper is fixed and ink is not because you print onto one stock and the inks change: the substrate is a constant of the instrument, the pigment moves with the scheme. Slot 4 is `#FBFAF8` in all six sets, `neon` included — the ground goes dark by using slot 0, not by moving the stock.
 
-**The five sets**, in stepper order, quiet to loud. Values in slot order; these are brand values and this table is the source of truth for them (`src/state/palettes.ts` matches it exactly).
+Two carve-outs from the soft part of the contract. `rainbow` and `neon` spend all eleven color slots on a single hue sweep rather than wash/earth/accent/wheel, on purpose. And `neon` is the one palette whose spine is cool rather than warm-biased — a blue-violet near-black, because neon hues over the house's warm putty grays read muddy.
+
+**The six sets**, in stepper order, quiet to loud. Values in slot order; these are brand values and this table is the source of truth for them (`src/state/palettes.ts` matches it exactly).
 
 **`shop`** — the house set. Restrained industrial, screen-print flavored.
 
@@ -103,14 +107,21 @@ Slots 0–4 are the value spine, dark to light. Paper is fixed and ink is not be
 #8E1F32 #C99A21 #1D6E4E #17696E #1E3F8F #5B2E8F #961C63 #C4708C
 ```
 
-**`rainbow`** — one ordered hue sweep over eleven steps, on the neutral brand spine so the sweep reads clean against it. All eleven are held at a similar mid value and moderate chroma: a printed spectrum chart, not an RGB primary set. If one ever reads as neon, that is a bug in the value, not a licence to brighten the rest.
+**`rainbow`** — the CSS color keywords, straight. Every swatch is a real named color, spelled exactly: the spine is black, dimgray, gray, silver; then eleven hue keywords in one ordered sweep — red, orangered, orange, gold, yellow, lime, green, cyan, blue, indigo, magenta. These are not screen-print interpretations and must not be retuned toward the house values; a near-value would make the name a lie. Slot 4 is still `#FBFAF8`, not CSS `white`, because paper is paper.
 
 ```
-#232320 #575651 #8B8A85 #C6C5BF #FBFAF8 #C9332F #D9701C #D8AE14
-#86A32B #3B9457 #1E9083 #2081A5 #2B5CB8 #5A46B5 #8C41A8 #C0417E
+#000000 #696969 #808080 #C0C0C0 #FBFAF8 #FF0000 #FF4500 #FFA500
+#FFD700 #FFFF00 #00FF00 #008000 #00FFFF #0000FF #4B0082 #FF00FF
 ```
 
-`shop` is the default and is the original brand set, unchanged; it is also the set the demo ships. The custom-color well is unaffected by palette choice — it keeps its fixed spectrum ring and stays available in all five, which is what makes a palette a starting point rather than a cage.
+**`neon`** — loud on a dark ground, and the only set with a cool spine: a blue-violet near-black rising to dusk, because these hues over warm putty grays read muddy. Eleven fluorescents in the same ordered sweep as `rainbow` — rose, orange, yellow, acid, green, mint, cyan, azure, blue, purple, magenta. This one is meant to glow; that is the whole brief, and it stops at the canvas.
+
+```
+#0B0B12 #1E1B2E #4A4468 #8F86B8 #FBFAF8 #FF1D58 #FF6B00 #FFD400
+#C6FF00 #39FF14 #00FFC6 #00E5FF #00A3FF #4D5BFF #B026FF #FF00E5
+```
+
+`shop` is the default and is the original brand set, unchanged; it is also the set the demo ships. The custom-color well is unaffected by palette choice — it keeps its fixed spectrum ring and stays available in all six, which is what makes a palette a starting point rather than a cage.
 
 ## 4. Typography
 
