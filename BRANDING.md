@@ -109,6 +109,8 @@ Two carve-outs from the soft part of the contract. `rainbow` and `neon` spend al
 
 **`rainbow`** — the CSS color keywords, straight. Every swatch is a real named color, spelled exactly: the spine is black, dimgray, gray, silver; then eleven hue keywords in one ordered sweep — red, orangered, orange, gold, yellow, lime, green, cyan, blue, indigo, magenta. These are not screen-print interpretations and must not be retuned toward the house values; a near-value would make the name a lie. Slot 4 is still `#FBFAF8`, not CSS `white`, because paper is paper.
 
+One consequence, accepted rather than overlooked: `orangered` (`#FF4500`) is all but identical to the accent (`#FF4E00`) — the same color to the eye at chip size. The accent keeps its meaning anyway, because orange means something by *where* it appears — a lit LED, an active key, a focus ring — not by being a hex nothing else is allowed to hold. The one cost is that when that chip is the current color, its orange ring reads as a halo rather than as a ring, and `red` and `orangered` sitting side by side read as two reds. Both are the price of spelling the keywords exactly, and the keywords win.
+
 ```
 #000000 #696969 #808080 #C0C0C0 #FBFAF8 #FF0000 #FF4500 #FFA500
 #FFD700 #FFFF00 #00FF00 #008000 #00FFFF #0000FF #4B0082 #FF00FF
