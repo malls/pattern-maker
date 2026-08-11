@@ -607,7 +607,17 @@ function boot(): void {
       h("span", { className: "wordmark", text: "pattern maker" }),
       h("span", { className: "model", text: "PM–1" }),
       h("span", { className: "tagline", text: "professional pattern instrument" }),
-      // the desktop app doesn't advertise itself
+      // the source link is honest everywhere; only the desktop download hides
+      // from the desktop app
+      h("a", {
+        className: "download",
+        text: "source",
+        attrs: {
+          href: "https://github.com/malls/pattern-maker",
+          target: "_blank",
+          rel: "noopener",
+        },
+      }),
       ...("__TAURI_INTERNALS__" in window
         ? []
         : [
