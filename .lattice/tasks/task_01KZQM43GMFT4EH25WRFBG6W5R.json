@@ -1,26 +1,32 @@
 {
   "assigned_to": null,
   "branch_links": [],
-  "comment_count": 1,
+  "comment_count": 3,
   "complexity": null,
   "created_at": "2026-08-11T05:18:31Z",
   "created_by": "agent:claude-fable-5",
   "custom_fields": {},
   "description": null,
-  "done_at": null,
-  "evidence_refs": [],
+  "done_at": "2026-08-11T22:14:11Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZSE7NZS5YSSDXDQ1YFPN0P0",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
   "id": "task_01KZQM43GMFT4EH25WRFBG6W5R",
-  "last_event_id": "ev_01KZQM4AKPPEH7RYM5MKJVKCM2",
-  "last_status_changed_at": "2026-08-11T05:18:31Z",
+  "last_event_id": "ev_01KZSE7V7AY6WGKDGNVP5PA2D8",
+  "last_status_changed_at": "2026-08-11T22:14:11Z",
   "priority": "medium",
   "relationships_out": [],
   "reopened_count": 0,
   "schema_version": 1,
   "short_id": "PM-14",
-  "status": "backlog",
+  "status": "done",
   "tags": null,
   "title": "Tile preview loses its 12px gap: refreshPreviews resets style.display, wiping inline display:grid",
   "type": "task",
-  "updated_at": "2026-08-11T05:18:38Z",
+  "updated_at": "2026-08-11T22:14:11Z",
   "urgency": null
 }
