@@ -1,0 +1,32 @@
+{
+  "assigned_to": null,
+  "branch_links": [],
+  "comment_count": 2,
+  "complexity": null,
+  "created_at": "2026-08-11T05:15:45Z",
+  "created_by": "human:forrest",
+  "custom_fields": {},
+  "description": null,
+  "done_at": "2026-08-11T05:18:07Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZQM38F21P8W4R0HWH7JAXTE",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
+  "id": "task_01KZQKZ179JWAMSKCA12DM8584",
+  "last_event_id": "ev_01KZQM3CB0X0T5QEDM73RVXE32",
+  "last_status_changed_at": "2026-08-11T05:18:07Z",
+  "priority": "medium",
+  "relationships_out": [],
+  "reopened_count": 0,
+  "schema_version": 1,
+  "short_id": "PM-13",
+  "status": "done",
+  "tags": null,
+  "title": "Tile preview: add repeat 2x swatch between 4x and 1x",
+  "type": "task",
+  "updated_at": "2026-08-11T05:18:07Z",
+  "urgency": null
+}
