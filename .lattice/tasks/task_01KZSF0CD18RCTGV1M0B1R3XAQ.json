@@ -1,26 +1,32 @@
 {
   "assigned_to": null,
   "branch_links": [],
-  "comment_count": 1,
+  "comment_count": 2,
   "complexity": null,
   "created_at": "2026-08-11T22:27:35Z",
   "created_by": "human:forrest",
   "custom_fields": {},
   "description": null,
-  "done_at": null,
-  "evidence_refs": [],
+  "done_at": "2026-08-11T22:39:52Z",
+  "evidence_refs": [
+    {
+      "id": "ev_01KZSFPW3K2FYT9R99Q1GY3VX1",
+      "role": "review",
+      "source_type": "comment"
+    }
+  ],
   "id": "task_01KZSF0CD18RCTGV1M0B1R3XAQ",
-  "last_event_id": "ev_01KZSFEXMY79NMVN0Y5AXNAJEK",
-  "last_status_changed_at": "2026-08-11T22:35:31Z",
+  "last_event_id": "ev_01KZSFPW6ZJ6BYXR5RGMAEV82V",
+  "last_status_changed_at": "2026-08-11T22:39:52Z",
   "priority": "medium",
   "relationships_out": [],
   "reopened_count": 0,
   "schema_version": 1,
   "short_id": "PM-17",
-  "status": "review",
+  "status": "done",
   "tags": null,
   "title": "Desktop: Tauri wrap + Actions release pipeline + download links",
   "type": "task",
-  "updated_at": "2026-08-11T22:35:31Z",
+  "updated_at": "2026-08-11T22:39:52Z",
   "urgency": null
 }
