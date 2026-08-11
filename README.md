@@ -5,7 +5,7 @@
 **professional pattern instrument** — a drawing tool for CSS border-images and
 seamless tiles. pixels in, patterns out.
 
-**Use it now: [malls.github.io/pattern-maker](https://malls.github.io/pattern-maker/)**
+**Use it now: [forrestalmasi.com/pattern-maker](https://www.forrestalmasi.com/pattern-maker/)**
 
 ## what it does
 
