@@ -437,6 +437,9 @@ body {
      on phones so two columns always fit — desktop keeps the exact 158px */
   .bp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bp-box { width: 100%; max-width: 158px; height: auto; aspect-ratio: 1 / 1; }
+  /* the 2x study sizes itself inline via min(size, 100%) — the 158px clamp
+     above must not apply to it (width inline styles don't override max-width) */
+  .bp-item-wide .bp-box { max-width: 100%; }
   .lcd { gap: 8px; padding: 7px 10px; }
   .lcd .seg-out, .lcd .seg-focus, .lcd .seg-sel { display: none; }
 }
