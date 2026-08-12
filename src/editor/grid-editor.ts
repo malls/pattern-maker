@@ -44,7 +44,9 @@ export interface GridEditor {
   relayout(): void;
 }
 
-/** Container inner padding (the bezel's 8px) — subtracted when measuring. */
+/** Container inner padding (the bezel's 8px) — subtracted when measuring.
+ *  Measurement uses clientWidth/clientHeight (the padding box), so the bezel's
+ *  1px border is already excluded and only this padding needs subtracting. */
 const BEZEL_PAD = 8;
 
 function get2d(c: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -89,17 +91,30 @@ export function createGridEditor(deps: GridEditorDeps): GridEditor {
   let renderQueued = false;
 
   function layout(): void {
-    dpr = window.devicePixelRatio || 1;
+    const nextDpr = window.devicePixelRatio || 1;
     const L = viewSize(doc);
-    const rect = container.getBoundingClientRect();
-    const cssW = Math.max(32, rect.width - BEZEL_PAD * 2);
-    const cssH = Math.max(32, rect.height - BEZEL_PAD * 2);
-    devW = Math.floor(cssW * dpr);
-    devH = Math.floor(cssH * dpr);
-    canvas.width = devW;
-    canvas.height = devH;
-    canvas.style.width = `${devW / dpr}px`;
-    canvas.style.height = `${devH / dpr}px`;
+    // clientWidth/clientHeight is the padding box — unlike the border box
+    // getBoundingClientRect() returns, it can never include the border, so
+    // the canvas can never be sized past the bezel's content box (which
+    // would raise the bezel's min-content size and feed a resize loop).
+    const cssW = Math.max(32, container.clientWidth - BEZEL_PAD * 2);
+    const cssH = Math.max(32, container.clientHeight - BEZEL_PAD * 2);
+    const newDevW = Math.floor(cssW * nextDpr);
+    const newDevH = Math.floor(cssH * nextDpr);
+    // Resizing the canvas clears it and forces a full redraw — skip when the
+    // device size and DPR are unchanged (the ResizeObserver can fire without
+    // a real size change). Everything below still runs: focus and cell-size
+    // changes arrive via needLayout with the box unchanged and must recompute
+    // the zoom and checker.
+    if (newDevW !== devW || newDevH !== devH || nextDpr !== dpr) {
+      devW = newDevW;
+      devH = newDevH;
+      canvas.width = devW;
+      canvas.height = devH;
+      canvas.style.width = `${devW / nextDpr}px`;
+      canvas.style.height = `${devH / nextDpr}px`;
+    }
+    dpr = nextDpr;
     // largest integer device zoom that fits, centered, letterboxed
     const focus = store.get().focus;
     const C = doc.cellSize;
