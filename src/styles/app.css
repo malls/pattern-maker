@@ -440,6 +440,19 @@ body {
   .lcd { gap: 8px; padding: 7px 10px; }
   .lcd .seg-out, .lcd .seg-focus, .lcd .seg-sel { display: none; }
 }
+/* touch targets — coarse pointers only, so narrow desktop windows never see
+   this. Justified exceptions to the 44px guidance (desktop-first brand,
+   spacing compensates): tool keys 46x42, t-key buttons ~52x48 with label,
+   chips 24px at 32px pitch, mode/stepper keys 34-36px. Everything
+   interactive lands >=34px in its smaller dimension with >=6px gaps. */
+@media (pointer: coarse) and (max-width: 880px) {
+  .mode-bank .key { height: 34px; }
+  .stepper .key { width: 36px; height: 34px; }
+  .pal-stepper .key { width: 34px; height: 34px; }
+  .t-scale .key { width: 34px; }
+  .chips { grid-template-columns: repeat(8, 24px); grid-auto-rows: 24px; gap: 8px; }
+  .custom { width: 24px; height: 24px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .cursor { animation: none; }
   .key:active, .t-key:active .cap { transform: none; }
