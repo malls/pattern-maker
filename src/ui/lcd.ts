@@ -61,9 +61,11 @@ export function createLcd(): LcdView {
     ),
     h("span", {}, h("span", { className: "dim", text: "mode" }), " ", modeEl),
     h("span", {}, h("span", { className: "dim", text: "cell" }), " ", cellEl),
-    h("span", {}, h("span", { className: "dim", text: "out" }), " ", outOffEl, outOnEl),
-    h("span", {}, h("span", { className: "dim", text: "focus" }), " ", focusOffEl, focusOnEl),
-    h("span", {}, h("span", { className: "dim", text: "sel" }), " ", selOffEl, selOnEl),
+    // classed like .pos so narrow-viewport CSS can hide the segments that
+    // matter least while drawing (tool / mode / cell / tip stay)
+    h("span", { className: "seg-out" }, h("span", { className: "dim", text: "out" }), " ", outOffEl, outOnEl),
+    h("span", { className: "seg-focus" }, h("span", { className: "dim", text: "focus" }), " ", focusOffEl, focusOnEl),
+    h("span", { className: "seg-sel" }, h("span", { className: "dim", text: "sel" }), " ", selOffEl, selOnEl),
     h(
       "span",
       { className: "grow" },

@@ -422,6 +422,20 @@ body {
   .lcd { gap: 10px; }
   .lcd .pos { display: none; }
 }
+/* compact pass for phones — the 880 block above keeps doing the stacking */
+@media (max-width: 640px) {
+  body { padding: 10px; }
+  #app { min-height: calc(100vh - 20px); }
+  .device { padding: 12px 10px 10px; gap: 10px; }
+  .masthead { flex-wrap: wrap; }
+  .tagline { display: none; }              /* decorative; frees the masthead row */
+  .toolbar { gap: 10px 14px; }
+  .toolbar .tb-group { flex-wrap: wrap; }  /* the 8-key tool bank wraps to fit */
+  .deck { gap: 10px; }
+  .transport { flex-wrap: wrap; row-gap: 8px; }
+  .lcd { gap: 8px; padding: 7px 10px; }
+  .lcd .seg-out, .lcd .seg-focus, .lcd .seg-sel { display: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .cursor { animation: none; }
   .key:active, .t-key:active .cap { transform: none; }
