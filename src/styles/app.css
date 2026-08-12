@@ -1,6 +1,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { height: 100%; }
+/* clip, not hidden: no scroll container. If a rule ever overflows again it
+   must not re-expand the mobile layout viewport (PM-22). */
+html, body { overflow-x: clip; }
 body {
   min-height: 100%;
   font-family: var(--font-sans);
@@ -417,8 +420,11 @@ body {
   .panel { flex-direction: column; }
   .output { width: 100%; }
   /* viewport-relative so tall phones get more canvas; svh is stable while
-     browser chrome hides/shows (vh fallback first for older engines) */
-  .bezel { height: clamp(240px, 45vh, 420px); height: clamp(240px, 45svh, 420px); }
+     browser chrome hides/shows (vh fallback first for older engines).
+     flex: none — in the column layout the height is the MAIN axis, and the
+     desktop `flex: 1` would mean flex-basis 0, overriding this clamp to a
+     collapsed sliver (the old growth loop used to mask that) (PM-22) */
+  .bezel { flex: none; height: clamp(240px, 45vh, 420px); height: clamp(240px, 45svh, 420px); }
   .lcd { gap: 10px; }
   .lcd .pos { display: none; }
 }
@@ -430,7 +436,10 @@ body {
   .masthead { flex-wrap: wrap; }
   .tagline { display: none; }              /* decorative; frees the masthead row */
   .toolbar { gap: 10px 14px; }
-  .toolbar .tb-group { flex-wrap: wrap; }  /* the 8-key tool bank wraps to fit */
+  /* every control group wraps — including the deck's color cluster, which is a
+     .tb-group OUTSIDE .toolbar (chips.ts); scoping this to .toolbar let it
+     overflow the panel and expand the mobile layout viewport (PM-22) */
+  .tb-group { flex-wrap: wrap; }
   .deck { gap: 10px; }
   .transport { flex-wrap: wrap; row-gap: 8px; }
   /* flexible preview boxes: gives up the deliberately-non-multiple 158px
