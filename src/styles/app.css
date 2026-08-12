@@ -433,6 +433,10 @@ body {
   .toolbar .tb-group { flex-wrap: wrap; }  /* the 8-key tool bank wraps to fit */
   .deck { gap: 10px; }
   .transport { flex-wrap: wrap; row-gap: 8px; }
+  /* flexible preview boxes: gives up the deliberately-non-multiple 158px
+     on phones so two columns always fit — desktop keeps the exact 158px */
+  .bp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bp-box { width: 100%; max-width: 158px; height: auto; aspect-ratio: 1 / 1; }
   .lcd { gap: 8px; padding: 7px 10px; }
   .lcd .seg-out, .lcd .seg-focus, .lcd .seg-sel { display: none; }
 }

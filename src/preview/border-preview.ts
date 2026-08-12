@@ -48,9 +48,14 @@ export function createBorderPreview(): BorderPreview {
       // box-sizing: border-box would let a declared 158px with a 128px border
       // per side silently inflate the used width — size the box off the border
       // instead, keeping at least a 64px content strip so it reads as a frame.
+      // min(size, 100%) so the box can never force a narrow viewport wider
+      // (up to 320px at MAX_CELL); the desktop output column is 440px, where
+      // 100% never wins and the box stays exactly `size`. aspect-ratio keeps
+      // it square when the clamp bites.
       const size = Math.max(BOX_PX, bw * 2 + 64);
-      twoBox.style.width = `${size}px`;
-      twoBox.style.height = `${size}px`;
+      twoBox.style.width = `min(${size}px, 100%)`;
+      twoBox.style.height = "auto";
+      twoBox.style.aspectRatio = "1 / 1";
       twoBox.style.border = `${bw}px solid transparent`;
       twoBox.style.borderImage = `url("${uri}") ${cellSize} repeat`;
     },
