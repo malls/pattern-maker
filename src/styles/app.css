@@ -207,10 +207,20 @@ body {
 }
 .bezel {
   flex: 1;
+  /* both flex channels closed: the canvas inside can never raise the
+     bezel's automatic minimum size (row layout needs min-width, the <=880
+     column layout needs min-height — missing it caused an endless resize
+     feedback loop). contain: size encodes the sizing model structurally:
+     the bezel is sized as if empty, so no child can ever feed back. */
   min-width: 0;
-  /* fill tall viewports (fallback first for engines without dvh) */
+  min-height: 0;
+  contain: size;
+  /* fill tall viewports (fallback first for engines without svh).
+     svh, not the dynamic viewport unit: the small viewport is stable while
+     mobile browser chrome hides/shows, so scrolling never resizes (and
+     clears) the canvas. */
   height: clamp(560px, calc(100vh - 300px), 920px);
-  height: clamp(560px, calc(100dvh - 300px), 920px);
+  height: clamp(560px, calc(100svh - 300px), 920px);
   background: var(--ground);
   border: 1px solid var(--key-border);
   border-radius: 9px;
@@ -406,7 +416,9 @@ body {
 @media (max-width: 880px) {
   .panel { flex-direction: column; }
   .output { width: 100%; }
-  .bezel { height: 320px; }
+  /* viewport-relative so tall phones get more canvas; svh is stable while
+     browser chrome hides/shows (vh fallback first for older engines) */
+  .bezel { height: clamp(240px, 45vh, 420px); height: clamp(240px, 45svh, 420px); }
   .lcd { gap: 10px; }
   .lcd .pos { display: none; }
 }
